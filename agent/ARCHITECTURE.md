@@ -371,7 +371,24 @@ function MyAdvancedComponent() {
 
 ### 7.4. `componentType` 표준화
 
-> **결정:** UIAdapter가 기본적으로 인식해야 할 `componentType`의 표준 목록을 정의합니다. MVP 범위에서는 `password`, `textarea`를 지원하고 `createUIAdapter`를 통해 확장 가능합니다.
+> **결정:** UI 어댑터가 스키마의 렌더링 의도를 일관되게 해석할 수 있도록, `meta.componentType`에 사용될 표준 식별자 목록을 정의합니다. 이 표준 '어휘'는 어댑터 간의 호환성을 보장하고, 개발자가 어떤 UI 라이브러리를 사용하든 예측 가능한 방식으로 컴포넌트를 렌더링할 수 있게 합니다.
+
+- **존재 이유:** 표준이 없다면, 한 프로젝트에서는 암호 필드를 `meta({ componentType: 'pwd' })`로, 다른 곳에서는 `meta({ componentType: 'secret' })`으로 정의하게 되어 각기 다른 어댑터 구현이 필요해집니다. 표준 `componentType`은 이러한 비효율을 제거하고 어댑터의 재사용성을 극대화합니다.
+
+- **표준 `componentType` 목록:**
+
+| `componentType` | Zod 타입 (권장) | 설명 | 예시 UI 컴포넌트 (MUI) |
+| :--- | :--- | :--- | :--- |
+| `text` | `z.string()` | 기본적인 텍스트 입력 필드 (기본값) | `TextField` (type="text") |
+| `password` | `z.string()` | 비밀번호 입력 필드 | `TextField` (type="password")|
+| `textarea` | `z.string()` | 여러 줄 텍스트 입력 필드 | `TextField` (multiline) |
+| `number` | `z.number()` | 숫자 입력 필드 | `TextField` (type="number")|
+| `select` | `z.enum()` 또는 `z.array(z.string())` | 드롭다운 목록에서 선택 | `Select` |
+| `radio` | `z.enum()` | 여러 옵션 중 하나를 선택하는 라디오 버튼 그룹 | `RadioGroup` |
+| `switch` | `z.boolean()` | 켜기/끄기 스위치 | `Switch` |
+| `date` | `z.date()` 또는 `z.string()` | 날짜 선택 | Date Picker (외부 라이브러리) |
+
+- **확장성:** 위 목록은 권장 표준이며 라이브러리의 핵심 기능과 함께 제공됩니다. 개발자는 이 목록에 없는 자신만의 `componentType`(예: `color`, `slider`, `phone-number-input`)을 자유롭게 정의하고, 이를 처리하는 로직을 UI 어댑터에 추가하여 라이브러리의 기능을 손쉽게 확장할 수 있습니다. 이러한 접근 방식은 자주 사용하는 컴포넌트에 대한 편의성을 제공하는 동시에, 프로젝트별 특수한 요구사항에 대응할 수 있는 유연성을 보장합니다.
 
 ### 7.5. `react-hook-form` API 노출 수준
 
