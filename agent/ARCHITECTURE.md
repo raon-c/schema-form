@@ -396,12 +396,88 @@ function MyAdvancedComponent() {
 
 ## 8. API 상세 정의 및 예시 (API Details & Examples)
 
-### 8.1. `renderFieldLayout` Prop
+### 8.1. `renderFieldLayout` Prop: 필드 레이아웃 커스터마이징
 
-#### 8.1.1. 상세 동작 및 리렌더링
+- **목적 (Purpose):**
+    `UIAdapter`가 필드 자체(예: `<input>`, `<select>`)의 렌더링을 담당한다면, `renderFieldLayout` prop은 그 필드를 둘러싼 전체 레이아웃 구조(레이블, 도움말 텍스트, 에러 메시지, 외부 wrapper 등)를 개발자가 완전히 제어할 수 있도록 해주는 강력한 확장 포인트입니다. 이를 통해 프로젝트의 고유한 디자인 시스템 가이드라인(예: 수평 레이아웃, 그리드 시스템과의 통합, 특정 스타일의 에러 메시지 표시)을 완벽하게 충족시킬 수 있습니다.
 
-- **호출 시점 및 원리:** `renderFieldLayout`은 `<SchemaForm>`의 렌더링 로직에 포함된 순수 렌더링 함수입니다. 사용자 입력(`onChange`), 포커스 아웃(`onBlur`) 등 상호작용이 발생하면 `react-hook-form`의 내부 상태가 업데이트됩니다. 이 상태 변경은 `<SchemaForm>` 컴포넌트의 리렌더링을 유발하고, 결과적으로 `renderFieldLayout`은 항상 최신의 `field`, `error`, `isValidating` 등의 props를 전달받아 다시 호출됩니다.
-- **상태 업데이트와의 관계:** 따라서 `renderFieldLayout` 내부에서 `field`나 `error` 값의 변경에 따른 UI 업데이트는 `react-hook-form`의 상태 관리 및 리렌더링 메커니즘을 통해 자동으로 보장됩니다. 리렌더링의 구체적인 시점은 `<SchemaForm>`에 설정된 `mode` 옵션(`onChange` | `onBlur` | `onSubmit`)을 따릅니다.
+- **동작 원리 (How it Works):**
+    1. `<SchemaForm>`은 스키마를 순회하며 렌더링할 각 필드를 처리합니다.
+    2. 먼저, `UIAdapter`를 통해 해당 필드에 맞는 입력 컴포넌트(예: MUI의 `TextField`)를 렌더링합니다.
+    3. 그 다음, `renderFieldLayout` prop이 제공되었는지 확인합니다.
+        - **제공된 경우:** 렌더링된 입력 컴포넌트를 `children`으로, 그리고 레이블, 에러 메시지 등 다른 모든 관련 정보를 `props`로 하여 개발자가 제공한 `renderFieldLayout` 함수를 호출합니다.
+        - **제공되지 않은 경우 (기본값):** 라이브러리에 내장된 기본 레이아웃 컴포넌트를 사용하여 표준적인 상하 구조로 필드를 렌더링합니다.
+
+- **인터페이스 (Props):**
+    `renderFieldLayout` 함수는 다음 `props`를 가진 객체 하나를 인자로 받습니다.
+
+    ```typescript
+    interface RenderFieldLayoutProps {
+      // UI 어댑터가 렌더링한 실제 입력(input) 컴포넌트
+      children: React.ReactNode; 
+      // 필드의 레이블 텍스트
+      label: string; 
+      // 유효성 검사 에러 메시지 (에러가 없으면 undefined)
+      error?: string; 
+      // 스키마에 정의된 도움말 텍스트
+      helperText?: string;
+      // 해당 필드의 모든 메타데이터 (고급 조건부 로직에 활용 가능)
+      meta: FieldMetadata; 
+    }
+
+    type RenderFieldLayout = (props: RenderFieldLayoutProps) => React.ReactNode;
+    ```
+
+- **기본 레이아웃 (Default Layout):**
+    `renderFieldLayout` prop을 제공하지 않을 경우, 라이브러리는 내부적으로 다음과 유사한 구조로 필드를 렌더링합니다. (클래스명은 예시입니다)
+
+    ```tsx
+    // 개발자가 renderFieldLayout을 제공하지 않았을 때의 내부 동작 예시
+    <div className="sf-field-wrapper">
+      <label htmlFor={field.name}>{label}</label>
+      {children} {/* UI Adapter가 렌더링한 입력 컴포넌트 */}
+      {helperText && <p className="sf-helper-text">{helperText}</p>}
+      {error && <p className="sf-error-text">{error}</p>}
+    </div>
+    ```
+
+- **사용 예시 (Usage Example):**
+    레이블과 입력 필드를 수평으로 배치하고, 에러 메시지를 다른 스타일로 보여주고 싶을 때 다음과 같이 `renderFieldLayout` 함수를 작성하여 `<SchemaForm>`에 전달할 수 있습니다.
+
+    ```tsx
+    import { SchemaForm, RenderFieldLayoutProps } from 'schema-form';
+    // ... other imports
+
+    const MyCustomFieldLayout = ({ children, label, error }: RenderFieldLayoutProps) => {
+      return (
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '16px', 
+          marginBottom: '24px' 
+        }}>
+          <span style={{ fontWeight: 'bold', width: '120px' }}>{label}</span>
+          <div style={{ flex: 1 }}>
+            {children}
+            {error && <p style={{ color: 'purple', fontSize: '12px', marginTop: '4px' }}>
+              [오류] {error}
+            </p>}
+          </div>
+        </div>
+      );
+    };
+
+    function MyForm() {
+      return (
+        <SchemaForm
+          schema={mySchema}
+          uiAdapter={muiAdapter}
+          onSubmit={handleSubmit}
+          renderFieldLayout={MyCustomFieldLayout} // 직접 만든 레이아웃 함수를 prop으로 전달
+        />
+      );
+    }
+    ```
 
 ## 9. 테스트 전략 (Testing Strategy)
 
