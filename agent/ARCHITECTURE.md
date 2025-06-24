@@ -7,7 +7,8 @@
 ## 2. 핵심 설계 원칙 (Core Design Principles)
 
 - **관심사의 분리 (Separation of Concerns):** 폼의 '상태 및 로직'(State & Logic), '데이터 구조 및 유효성 검증'(Schema & Validation), '표현'(UI/View)을 명확하게 분리합니다.
-- **높은 확장성 (High Extensibility):** 어댑터 패턴을 통해 UI 라이브러리와 스키마 유효성 검증 라이브러리를 쉽게 교체하거나 추가할 수 있어야 합니다.
+- **스키마 표준화 (Schema Standardization):** `zod`를 표준 스키마로 채택하여 데이터 구조와 유효성 검증 규칙을 선언적으로 관리합니다.
+- **높은 UI 확장성 (High UI Extensibility):** 어댑터 패턴을 통해 UI 라이브러리를 쉽게 교체하거나 추가할 수 있어야 합니다.
 - **최고의 개발자 경험 (Developer Experience First):** 타입 안정성, 명확한 API, 상세한 문서를 통해 개발자가 라이브러리를 쉽고 즐겁게 사용할 수 있도록 합니다.
 - **성능 최적화 (Performance Optimization):** `react-hook-form`의 강점을 최대한 활용하여 불필요한 리렌더링을 최소화하고 빠른 응답성을 보장합니다.
 
@@ -17,16 +18,15 @@
 graph TD
     subgraph User Application
         A["<SchemaForm <br/>
-        schema={mySchema}<br/>
+        schema={myZodSchema}<br/>
         uiAdapter={muiAdapter}<br/>
         ... />"]
     end
 
     subgraph SchemaForm Library
-        B(Core Engine <br/>- react-hook-form)
+        B(Core Engine <br/>- react-hook-form <br/>- with zodResolver)
         C(Orchestrator <br/>- SchemaForm Component)
         D(UI Adapter <br/>- e.g., MUIAdapter)
-        E(Schema Adapter <br/>- e.g., ZodAdapter)
     end
 
     subgraph External Dependencies
@@ -41,11 +41,8 @@ graph TD
 
     A -- "Initializes & Orchestrates" --> C
 
-    C -- "Uses" --> B
-    C -- "Resolves via" --> E
+    C -- "Uses & Configures" --> B
     C -- "Renders via" --> D
-
-    E -- "Transforms" --> B
 ```
 
 ## 4. 주요 컴포넌트 상세 (Detailed Component Breakdown)
@@ -55,7 +52,7 @@ graph TD
 - **역할:** 폼의 상태 관리를 전담하는 핵심 엔진.
 - **책임:**
   - `useForm` 훅을 통해 폼의 상태(값, 에러, `dirty`, `touched` 등)를 관리합니다.
-  - `SchemaAdapter`로부터 변환된 `resolver`를 사용하여 유효성 검사를 수행합니다.
+  - `zod` 스키마로부터 생성된 `resolver`를 사용하여 유효성 검사를 수행합니다.
   - 필드 등록(`register`), 렌더링 제어(`Controller`) 등 `react-hook-form`의 API를 내부적으로 사용하여 UI와 상태를 연결합니다.
   - 폼 제출(`handleSubmit`) 로직을 처리합니다.
 
@@ -63,7 +60,7 @@ graph TD
 
 - **역할:** 라이브러리의 메인 진입점이자 전체 플로우를 조율하는 오케스트레이터.
 - **책임:**
-  - 사용자로부터 `schema`, `uiAdapter`, `schemaAdapter`, `onSubmit` 등의 `props`를 전달받습니다.
+  - 사용자로부터 `schema`, `uiAdapter`, `onSubmit` 등의 `props`를 전달받습니다.
   - `useForm` 훅을 초기화하고, `control`, `formState` 등의 `react-hook-form` 인스턴스를 내부적으로 관리합니다.
   - 스키마 객체를 순회하며 각 필드에 대한 렌더링을 `UIAdapter`에 위임합니다.
   - 렌더링된 필드에 `react-hook-form`의 `<Controller>`를 통해 필요한 `props`(e.g., `onChange`, `onBlur`, `value`, `ref`)를 주입합니다.
@@ -83,48 +80,9 @@ graph TD
     4. 필드 렌더링 루프에서, 현재 필드의 `name`이 `validatingFields` Set에 포함되어 있는지 여부로 '검증 중' 상태를 판단하고, 이 상태(`isValidating` prop)를 `FormFieldLayout`에 전달하여 필드별 로딩 UI를 표시합니다.
     5. **상태 정리(Cleanup):** 필드의 비동기 검증이 완료되면(성공 또는 실패), 해당 필드의 `name`을 `validatingFields` Set에서 제거합니다. 또한, `formState.isValidating`이 `true`에서 `false`로 변경되는 시점을 `useEffect`로 감지하여, 모든 검증이 완료되었음을 확인하고 `validatingFields` Set을 비우는 정리 로직을 수행하여 상태 불일치를 방지합니다.
 
-### 4.3. Adapters
+### 4.3. UI Adapter
 
-- **역할:** `SchemaForm`의 핵심 로직과 외부 라이브러리(UI, 스키마)를 연결하는 어댑터.
-- **종류:** `SchemaAdapter`, `UIAdapter`.
-
-#### 4.3.1. Schema Adapter
-
-- **역할:** 특정 스키마 유효성 검증 라이브러리(e.g., zod, yup)와 `react-hook-form` 사이의 어댑터.
-- **인터페이스 (예시):**
-
-    ```typescript
-    import { Resolver, FieldValues } from 'react-hook-form';
-
-    interface SchemaAdapter {
-      (schema: any): Resolver<FieldValues, any>;
-    }
-    ```
-
-- **구현체 (ZodAdapter):** `zod` 스키마를 입력받아 `@hookform/resolvers/zod`를 사용하여 `resolver` 함수를 반환합니다.
-
-##### 4.3.1.1. Schema Adapter 확장 전략
-
-> **결정:** 초기 버전에서는 `createSchemaAdapter`와 같은 유틸리티를 제공하는 대신, 명확한 인터페이스와 구현 가이드를 제공하는 데 집중합니다.
->
-> **근거:** `@hookform/resolvers` 패키지가 이미 `Yup`, `Joi`, `Ajv` 등 주요 스키마 라이브러리에 대한 `resolver`를 훌륭하게 제공하고 있어, 이를 활용하는 것이 가장 효율적입니다. 라이브러리 코어는 가볍게 유지하고, 사용자가 필요에 따라 직접 어댑터를 만들거나 기존 `resolver`를 활용하도록 안내합니다.
-
-- **가이드 예시 (YupAdapter):**
-
-    ```typescript
-    // packages/adapter-yup/src/index.ts
-    import { yupResolver } from '@hookform/resolvers/yup';
-    import * as yup from 'yup';
-    
-    // 사용자는 Yup 스키마를 받아 yupResolver를 반환하는 간단한 함수를 만들어 사용합니다.
-    export const yupAdapter = (schema: yup.AnyObjectSchema) => {
-      return yupResolver(schema);
-    };
-    ```
-
-#### 4.3.2. UI Adapter
-
-- **역할:** 스키마 필드 타입에 맞는 UI 컴포넌트를 제공하는 팩토리.
+- **역할:** `SchemaForm`의 핵심 로직과 외부 UI 라이브러리를 연결하는 어댑터.
 - **인터페이스 (예시):**
 
     ```typescript
@@ -147,7 +105,7 @@ graph TD
 ## 5. 데이터 및 제어 흐름 (Data & Control Flow)
 
 1. **초기화 (Initialization):**
-    사용자가 `<SchemaForm>`을 렌더링하면, 컴포넌트는 `SchemaAdapter`를 통해 스키마를 `resolver`로 변환하고, 이를 사용하여 `useForm` 훅을 초기화합니다.
+    사용자가 `<SchemaForm>`을 렌더링하면, 컴포넌트는 전달받은 `zod` 스키마를 `@hookform/resolvers/zod`를 통해 `resolver`로 변환하고, 이를 사용하여 `useForm` 훅을 초기화합니다.
 2. **렌더링 (Rendering):**
     `<SchemaForm>`은 스키마를 순회하며 각 필드를 `react-hook-form`의 `<Controller>`로 감쌉니다. `<Controller>`의 `render` prop 내에서 `UIAdapter`를 호출하여 실제 UI 컴포넌트를 렌더링하고 `field`와 `formState`를 전달합니다.
 3. **상호작용 및 유효성 검사 (Interaction & Validation):**
@@ -162,7 +120,6 @@ graph TD
 ```tsx
 import { SchemaForm } from 'schema-form';
 import { muiAdapter } from 'schema-form/adapters/mui';
-import { zodAdapter } from 'schema-form/adapters/zod';
 import { z } from 'zod';
 
 const mySchema = z.object({
@@ -179,7 +136,6 @@ function MyComponent() {
     <SchemaForm
       schema={mySchema}
       uiAdapter={muiAdapter}
-      schemaAdapter={zodAdapter}
       onSubmit={handleSubmit}
     />
   );
