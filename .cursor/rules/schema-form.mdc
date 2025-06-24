@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# SchemaForm 코딩 & 문서 가이드라인
+
+이 규칙은 **AI 어시스턴트와 인간 기여자 모두**가 `SchemaForm` 코드베이스를 탐색하고 수정할 때 따라야 할 공통 가드레일을 정의합니다. 모든 상세 지침은 반드시 아래 파일들을 순서대로 확인하십시오.
+
+1. **코딩 규칙 & 워크플로우** → [AGENTS.md](mdc:agent/AGENTS.md)
+2. **기술 아키텍처** → [ARCHITECTURE.md](mdc:agent/ARCHITECTURE.md)
+3. **제품 요구사항** → [PRD.md](mdc:agent/PRD.md)
+4. **Task Master 작업 관리** → 프로젝트 루트의 `.taskmaster/` 디렉토리 참조
+
+---
+
+## 1. 기본 원칙
+- 작업을 시작하기 전에 **반드시** [AGENTS.md](mdc:agent/AGENTS.md)의 골든 규칙과 빌드·테스트 절차를 숙지합니다.
+- 작업을 시작하기 전에 **반드시** `task-master next` 명령어를 통해 현재 진행할 작업을 확인합니다.
+- 선택한 작업에만 집중하며, 작업 범위를 임의로 확대하지 않습니다.
+- [AGENTS.md](mdc:agent/AGENTS.md)에서 정의한 범위 밖의 변경(예: 디렉터리 구조, 어댑터 패턴 등)에는 [ARCHITECTURE.md](mdc:agent/ARCHITECTURE.md) 업데이트가 필요합니다.
+
+## 2. 문서 수정 플로우
+| 변경 유형 | 우선 수정 파일 | 추가 조치 |
+|-----------|---------------|-----------|
+| 코딩 스타일 / 커밋 규율 / AI 워크플로우 | [AGENTS.md](mdc:agent/AGENTS.md) | 해당 내용이 아키텍처와 충돌하지 않는지 검토 |
+| 아키텍처(디렉터리 구조, 어댑터 패턴 등) | [ARCHITECTURE.md](mdc:agent/ARCHITECTURE.md) | 1) Revision History 테이블에 버전·날짜·작성자·내용 추가<br/>2) 필요 시 [AGENTS.md](mdc:agent/AGENTS.md)에 요약 링크 추가 |
+| 제품 범위·기능 요구 | [PRD.md](mdc:agent/PRD.md) | [ARCHITECTURE.md](mdc:agent/ARCHITECTURE.md)에 영향 여부 검토 |
+
+> **중요**: 아키텍처 변경 시, [ARCHITECTURE.md](mdc:agent/ARCHITECTURE.md)의 *Revision History*를 **반드시** 업데이트하여 변경 이력을 명확히 기록하십시오.
+
+## 3. AI 작업 체크리스트 (요약)
+1. **`task-master next` 실행** → 현재 진행할 작업 1개 선택 및 확인
+2. **작업 복잡도 평가** → 2시간 이상 소요 예상 시 `task-master expand`로 세부작업 분할
+3. **[AGENTS.md](mdc:agent/AGENTS.md) 확인** → 지침 준수 여부 판단
+4. **선택한 작업에만 집중** → 작업 범위 확대 금지
+5. **코드/문서 수정** → 커밋 메시지에 변경 이유 명시 (`[AI]` 태그 포함)
+6. **작업 완료 시 상태 업데이트** → `task-master set-status --id=<id> --status=done` 실행
+7. **아키텍처 영향 시** → [ARCHITECTURE.md](mdc:agent/ARCHITECTURE.md) Revision History 항목 추가
+8. **진행 상황 보고** → 완료 작업, 다음 추천 작업 등 요약 보고
+9. **PR 생성** → 인간 리뷰어 지정
+
+이 규칙 파일은 가벼운 참조용입니다. 세부 사항은 각 마크다운 문서를 직접 확인하세요.
