@@ -4,19 +4,92 @@
       {
         "id": 1,
         "title": "Project Setup and Configuration",
-        "description": "Initialize the project repository with TypeScript, React, and necessary build tools",
-        "details": "Create a new project using a modern build setup:\n1. Initialize with `npm init -y`\n2. Install core dependencies: React, TypeScript, Zod, react-hook-form\n3. Configure TypeScript with strict mode enabled\n4. Set up ESLint and Prettier for code quality\n5. Configure build process with rollup or vite\n6. Set up peer dependencies in package.json for react-hook-form and zod\n7. Create basic folder structure (src/, examples/, tests/)\n8. Configure Jest and React Testing Library for unit tests",
-        "testStrategy": "Verify project builds successfully and TypeScript compilation works without errors. Run a smoke test to ensure the development environment is properly set up.",
-        "priority": "high",
+        "description": "Configure the monorepo structure and create core packages based on the ARCHITECTURE.md document",
+        "status": "in-progress",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Set up the project packages within the existing monorepo structure:\n1. Create the following core packages according to ARCHITECTURE.md:\n   - packages/schemaform-core/ (core <SchemaForm> component and logic)\n   - packages/adapter-zod/ (Zod schema adapter)\n   - packages/adapter-mui/ (MUI UI adapter)\n2. Configure each package with appropriate package.json and tsconfig.json\n3. Install core dependencies: React, TypeScript, Zod, react-hook-form, @hookform/resolvers\n4. Set up internal dependencies between packages\n5. Configure build pipeline using Turborepo for parallel builds\n6. Enable TypeScript strict mode and set up path mapping\n7. Create standard folder structure in each package (src/, tests/, examples/)\n8. Configure testing tools for each package",
+        "testStrategy": "Verify all packages build successfully within the monorepo. Ensure TypeScript compilation works without errors across packages. Confirm that internal dependencies are correctly resolved and the build pipeline executes properly.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create core packages structure",
+            "description": "Set up the three main packages according to ARCHITECTURE.md",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure package.json for each package",
+            "description": "Set up package.json with appropriate dependencies, scripts, and internal references",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Configure TypeScript for each package",
+            "description": "Create tsconfig.json with strict mode and proper path mappings for each package",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Install shared dependencies",
+            "description": "Install React, TypeScript, Zod, react-hook-form, and @hookform/resolvers",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Set up internal package dependencies",
+            "description": "Configure dependencies between packages (e.g., adapters depending on core)",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Configure Turborepo build pipeline",
+            "description": "Set up turbo.json to enable parallel builds and proper dependency order",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create standard folder structure",
+            "description": "Set up src/, tests/, and examples/ directories in each package",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Configure testing tools",
+            "description": "Set up Jest and React Testing Library for each package",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 2,
         "title": "Core Types and Interfaces Definition",
         "description": "Define the core TypeScript interfaces and types that will be used throughout the library",
-        "details": "Create a types.ts file with the following definitions:\n1. `SchemaFormProps` interface for the main component props\n2. `UIAdapter` interface to define the adapter pattern\n3. `FieldProps` interface for standardized field rendering\n4. `ComponentType` enum/type for standard component types\n5. `MetaData` interface for schema metadata\n6. Type utilities for extracting schema information\n7. Types for controlled vs uncontrolled modes\n8. Types for validation modes and triggers",
+        "details": "Create a types.ts file with the following definitions:\n1. `SchemaFormProps` interface for the main component props\n2. `UIAdapter` interface to define the adapter pattern\n3. `FieldProps` interface for standardized field rendering\n4. `ComponentType` enum/type for standard component types\n5. `MetaData` interface for schema metadata\n6. Type utilities for extracting schema information\n7. Types for controlled vs uncontrolled modes\n8. Types for validation modes and triggers\n<info added on 2025-06-24T07:37:07.489Z>\nImplement the core interfaces defined in ARCHITECTURE.md in the schemaform-core/src/types/ directory:\n\n1. Create a detailed `UIAdapter` interface that maps field types to React components\n2. Define the `FieldProps` interface with standard props including field, formState, label, meta, trigger, etc.\n3. Implement the `FieldMetadata` interface to extract UI information from schema meta() such as label, placeholder, componentType, validationTrigger\n4. Create a `RenderFieldLayoutProps` interface for field layout customization\n5. Define a standard `ComponentType` enum with values: 'text', 'password', 'textarea', 'number', 'select', 'radio', 'switch', 'date'\n\nThese types will establish the type safety foundation for the entire library and should be implemented in a modular, extensible way.\n</info added on 2025-06-24T07:37:07.489Z>",
         "testStrategy": "Write unit tests to verify type compatibility and edge cases. Use TypeScript's type checking to ensure interfaces are correctly defined and used.",
         "priority": "high",
         "dependencies": [
@@ -29,7 +102,7 @@
         "id": 3,
         "title": "Implement SchemaForm Core Component",
         "description": "Create the main SchemaForm component that serves as the entry point for the library",
-        "details": "Implement the SchemaForm component with the following features:\n1. Accept zod schema as a prop\n2. Accept UI adapter as a prop\n3. Accept onSubmit handler\n4. Handle form submission\n5. Implement basic rendering logic\n6. Connect with react-hook-form's useForm hook\n7. Implement proper TypeScript generics to ensure type safety\n8. Handle default values\n\nExample implementation:\n```tsx\nexport function SchemaForm<T extends z.ZodType>({ \n  schema, \n  uiAdapter, \n  onSubmit, \n  defaultValues,\n  ...props \n}: SchemaFormProps<T>) {\n  const form = useForm({\n    resolver: zodResolver(schema),\n    defaultValues,\n  });\n  \n  return (\n    <form onSubmit={form.handleSubmit(onSubmit)}>\n      {/* Field rendering logic will go here */}\n    </form>\n  );\n}\n```",
+        "details": "Implement the SchemaForm component with the following features:\n1. Accept zod schema as a prop\n2. Accept UI adapter as a prop\n3. Accept onSubmit handler\n4. Handle form submission\n5. Implement basic rendering logic\n6. Connect with react-hook-form's useForm hook\n7. Implement proper TypeScript generics to ensure type safety\n8. Handle default values\n\nExample implementation:\n```tsx\nexport function SchemaForm<T extends z.ZodType>({ \n  schema, \n  uiAdapter, \n  onSubmit, \n  defaultValues,\n  ...props \n}: SchemaFormProps<T>) {\n  const form = useForm({\n    resolver: zodResolver(schema),\n    defaultValues,\n  });\n  \n  return (\n    <form onSubmit={form.handleSubmit(onSubmit)}>\n      {/* Field rendering logic will go here */}\n    </form>\n  );\n}\n```\n<info added on 2025-06-24T07:37:26.157Z>\n## SchemaForm Core Component Architecture\n\n**Main Responsibilities (Orchestrator Role):**\n1. Receive props from users: schema, uiAdapter, onSubmit, mode, etc.\n2. Initialize useForm hook and manage react-hook-form instance (control, formState, trigger)\n3. Traverse schema objects and delegate rendering of each field to UIAdapter\n4. Inject necessary props to fields through react-hook-form's Controller\n5. Support both uncontrolled/controlled modes (branching based on presence of control prop)\n6. Handle error flow (retrieve field-specific errors from formState.errors and pass to UI)\n7. Process asynchronous validation (manage field loading states with validatingFields Set)\n8. Support layout customization through renderFieldLayout prop\n\n**API Design:**\n- Uncontrolled mode: schema, uiAdapter, onSubmit, mode props\n- Controlled mode: control, schema, uiAdapter, onSubmit props (skip internal useForm initialization)\n</info added on 2025-06-24T07:37:26.157Z>",
         "testStrategy": "Write unit tests to verify the component renders correctly and integrates with react-hook-form. Test with simple schemas to ensure basic functionality works.",
         "priority": "high",
         "dependencies": [
@@ -122,7 +195,7 @@
         "id": 10,
         "title": "Implement Schema Metadata Standard",
         "description": "Define and implement the standard for schema metadata using Zod's meta() function",
-        "details": "Create the metadata standard:\n1. Define standard metadata properties (label, placeholder, componentType, etc.)\n2. Implement utility functions for adding metadata to schemas\n3. Create TypeScript types for metadata\n4. Document the standard format\n5. Implement extraction and usage in the rendering logic\n\nExample implementation:\n```typescript\nexport interface FieldMetadata {\n  label?: string;\n  placeholder?: string;\n  componentType?: ComponentType;\n  helperText?: string;\n  validationTrigger?: 'onChange' | 'onBlur' | 'onSubmit';\n  // Other metadata properties\n}\n\n// Helper function\nexport function withMeta<T extends z.ZodType>(schema: T, meta: FieldMetadata): T {\n  return schema.meta(meta) as T;\n}\n\n// Usage example\nconst schema = z.object({\n  name: z.string().min(2).max(50).meta({ \n    label: 'Full Name', \n    placeholder: 'Enter your full name',\n    componentType: 'text'\n  })\n});\n```",
+        "details": "Create the metadata standard:\n1. Define standard metadata properties (label, placeholder, componentType, etc.)\n2. Implement utility functions for adding metadata to schemas\n3. Create TypeScript types for metadata\n4. Document the standard format\n5. Implement extraction and usage in the rendering logic\n\nExample implementation:\n```typescript\nexport interface FieldMetadata {\n  label?: string;\n  placeholder?: string;\n  componentType?: ComponentType;\n  helperText?: string;\n  validationTrigger?: 'onChange' | 'onBlur' | 'onSubmit';\n  // Other metadata properties\n}\n\n// Helper function\nexport function withMeta<T extends z.ZodType>(schema: T, meta: FieldMetadata): T {\n  return schema.meta(meta) as T;\n}\n\n// Usage example\nconst schema = z.object({\n  name: z.string().min(2).max(50).meta({ \n    label: 'Full Name', \n    placeholder: 'Enter your full name',\n    componentType: 'text'\n  })\n});\n```\n<info added on 2025-06-24T07:37:46.724Z>\n## Updated Metadata Standard Based on ARCHITECTURE.md\n\nThe standard FieldMetadata interface should be updated to:\n\n```typescript\ninterface FieldMetadata {\n  label: string;\n  placeholder?: string;\n  helperText?: string;\n  componentType?: 'password' | 'textarea' | string;\n  component?: React.ComponentType<FieldProps>;\n  validationTrigger?: 'onChange' | 'onBlur';\n}\n```\n\nAdditional implementation requirements:\n1. Create schema traversal utility functions to walk through nested schema objects\n2. Implement metadata extraction functions that can retrieve metadata from any level of the schema\n3. Develop type-safe helper functions to ensure proper typing when working with metadata\n4. Support the following usage pattern as shown in the example:\n   ```typescript\n   const mySchema = z.object({\n     name: z.string().min(2).meta({\n       label: '사용자 이름',\n       placeholder: '이름을 입력하세요',\n       helperText: '실명을 사용해 주세요.',\n     }),\n     bio: z.string().optional().meta({\n       label: '자기소개',\n       componentType: 'textarea',\n     }),\n     email: z.string().email().meta({\n       label: '이메일',\n       validationTrigger: 'onBlur',\n     }),\n   });\n   ```\n\nThis implementation follows Decision 7.1 from ARCHITECTURE.md which standardizes the use of Zod's .meta() method for injecting UI metadata into schemas.\n</info added on 2025-06-24T07:37:46.724Z>",
         "testStrategy": "Test metadata extraction and usage. Verify all standard properties work correctly. Test with various schema types.",
         "priority": "high",
         "dependencies": [
@@ -135,7 +208,7 @@
         "id": 11,
         "title": "Implement Standard Component Type Support",
         "description": "Implement support for standard component types defined in the metadata",
-        "details": "Implement component type support:\n1. Define the standard component types (text, password, textarea, number, select, switch, etc.)\n2. Create mapping logic from Zod types to default component types\n3. Allow overriding via metadata\n4. Implement type inference for better developer experience\n5. Handle special cases and complex types\n\nExample implementation:\n```typescript\nexport type ComponentType = 'text' | 'password' | 'textarea' | 'number' | 'select' | 'switch' | 'checkbox' | 'radio' | 'date';\n\nfunction inferComponentType(schema: z.ZodType): ComponentType {\n  if (schema instanceof z.ZodString) {\n    return 'text';\n  } else if (schema instanceof z.ZodNumber) {\n    return 'number';\n  } else if (schema instanceof z.ZodBoolean) {\n    return 'switch';\n  } else if (schema instanceof z.ZodEnum) {\n    return 'select';\n  }\n  // Handle other cases\n  return 'text';\n}\n```",
+        "details": "Implement component type support:\n1. Define the standard component types (text, password, textarea, number, select, switch, etc.)\n2. Create mapping logic from Zod types to default component types\n3. Allow overriding via metadata\n4. Implement type inference for better developer experience\n5. Handle special cases and complex types\n\nExample implementation:\n```typescript\nexport type ComponentType = 'text' | 'password' | 'textarea' | 'number' | 'select' | 'switch' | 'checkbox' | 'radio' | 'date';\n\nfunction inferComponentType(schema: z.ZodType): ComponentType {\n  if (schema instanceof z.ZodString) {\n    return 'text';\n  } else if (schema instanceof z.ZodNumber) {\n    return 'number';\n  } else if (schema instanceof z.ZodBoolean) {\n    return 'switch';\n  } else if (schema instanceof z.ZodEnum) {\n    return 'select';\n  }\n  // Handle other cases\n  return 'text';\n}\n```\n<info added on 2025-06-24T07:38:09.872Z>\n## Standard Component Types (Based on ARCHITECTURE.md Decision 7.4)\n\nThe following standard component types should be implemented according to the architecture documentation:\n\n| componentType | Zod Type (Recommended) | Description | Example UI Component (MUI) |\n|---|---|---|---|\n| text | z.string() | Basic text input field (default) | TextField (type=\"text\") |\n| password | z.string() | Password input field | TextField (type=\"password\") |\n| textarea | z.string() | Multi-line text input field | TextField (multiline) |\n| number | z.number() | Numeric input field | TextField (type=\"number\") |\n| select | z.enum() or z.array(z.string()) | Selection from dropdown list | Select |\n| radio | z.enum() | Radio button group for selecting one option | RadioGroup |\n| switch | z.boolean() | On/off switch | Switch |\n| date | z.date() or z.string() | Date selection | Date Picker (external library) |\n\nImplementation requirements:\n1. Define standard componentType enum or constants\n2. Implement logic in UIAdapter to handle these standard types\n3. Create automatic mapping logic between schema types and componentTypes\n4. Support custom componentTypes for extensibility\n5. Implement default rendering logic for each type\n</info added on 2025-06-24T07:38:09.872Z>",
         "testStrategy": "Test type inference with various schema types. Verify metadata overrides work correctly. Test edge cases and complex schemas.",
         "priority": "high",
         "dependencies": [
@@ -233,7 +306,7 @@
         "id": 18,
         "title": "Implement Field Layout Customization",
         "description": "Implement renderFieldLayout prop for complete control over field layout",
-        "details": "Implement field layout customization:\n1. Create renderFieldLayout prop type\n2. Implement default layout renderer\n3. Allow complete override of layout\n4. Pass all necessary context to custom renderer\n5. Document usage patterns\n\nExample implementation:\n```tsx\ntype RenderFieldLayoutFn = (\n  field: FieldDefinition,\n  input: React.ReactNode,\n  meta: {\n    label?: string;\n    error?: FieldError;\n    helperText?: string;\n  }\n) => React.ReactNode;\n\nconst defaultRenderFieldLayout: RenderFieldLayoutFn = (field, input, { label, error, helperText }) => (\n  <div className=\"sf-field-container\">\n    {label && <label className=\"sf-label\">{label}</label>}\n    {input}\n    {helperText && <div className=\"sf-helper-text\">{helperText}</div>}\n    {error && <div className=\"sf-error-message\">{error.message}</div>}\n  </div>\n);\n\n// In SchemaForm component\nconst renderFieldLayout = props.renderFieldLayout || defaultRenderFieldLayout;\n```",
+        "details": "Implement field layout customization:\n1. Create renderFieldLayout prop type\n2. Implement default layout renderer\n3. Allow complete override of layout\n4. Pass all necessary context to custom renderer\n5. Document usage patterns\n\nExample implementation:\n```tsx\ntype RenderFieldLayoutFn = (\n  field: FieldDefinition,\n  input: React.ReactNode,\n  meta: {\n    label?: string;\n    error?: FieldError;\n    helperText?: string;\n  }\n) => React.ReactNode;\n\nconst defaultRenderFieldLayout: RenderFieldLayoutFn = (field, input, { label, error, helperText }) => (\n  <div className=\"sf-field-container\">\n    {label && <label className=\"sf-label\">{label}</label>}\n    {input}\n    {helperText && <div className=\"sf-helper-text\">{helperText}</div>}\n    {error && <div className=\"sf-error-message\">{error.message}</div>}\n  </div>\n);\n\n// In SchemaForm component\nconst renderFieldLayout = props.renderFieldLayout || defaultRenderFieldLayout;\n```\n<info added on 2025-06-24T07:38:34.606Z>\n## ARCHITECTURE.md 기반 업데이트 (섹션 8.1 - renderFieldLayout Prop)\n\n### 목적\nUIAdapter가 필드 자체의 렌더링을 담당한다면, renderFieldLayout prop은 그 필드를 둘러싼 전체 레이아웃 구조(레이블, 도움말 텍스트, 에러 메시지, 외부 wrapper 등)를 개발자가 완전히 제어할 수 있도록 하는 강력한 확장 포인트입니다.\n\n### RenderFieldLayoutProps 인터페이스\n```typescript\ninterface RenderFieldLayoutProps {\n  children: React.ReactNode; // UI 어댑터가 렌더링한 실제 입력 컴포넌트\n  label: string; // 필드의 레이블 텍스트\n  error?: string; // 유효성 검사 에러 메시지\n  helperText?: string; // 스키마에 정의된 도움말 텍스트\n  meta: FieldMetadata; // 해당 필드의 모든 메타데이터\n}\n```\n\n### 동작 원리\n1. SchemaForm이 스키마 순회하며 각 필드 처리\n2. UIAdapter를 통해 입력 컴포넌트 렌더링\n3. renderFieldLayout prop 존재 여부 확인\n4. 제공된 경우: 입력 컴포넌트를 children으로, 레이블 등을 props로 전달\n5. 제공되지 않은 경우: 라이브러리 기본 레이아웃 사용\n\n### 기본 레이아웃 구조\n```tsx\n<div className=\"sf-field-wrapper\">\n  <label htmlFor={field.name}>{label}</label>\n  {children}\n  {helperText && <p className=\"sf-helper-text\">{helperText}</p>}\n  {error && <p className=\"sf-error-text\">{error}</p>}\n</div>\n```\n</info added on 2025-06-24T07:38:34.606Z>",
         "testStrategy": "Test with custom layout renderers. Verify all necessary context is passed. Test integration with different UI adapters.",
         "priority": "medium",
         "dependencies": [
@@ -246,7 +319,7 @@
         "id": 19,
         "title": "Implement CSS Variables for Theming",
         "description": "Implement CSS custom properties for easy theming and styling",
-        "details": "Implement CSS variables:\n1. Define standard CSS variables for colors, spacing, typography, etc.\n2. Create default theme with sensible values\n3. Apply variables to all components\n4. Document override patterns\n5. Create example themes\n\nExample implementation:\n```css\n:root {\n  --sf-color-primary: #1976d2;\n  --sf-color-error: #d32f2f;\n  --sf-border-radius: 4px;\n  --sf-spacing-unit: 8px;\n  --sf-font-family: system-ui, -apple-system, sans-serif;\n  /* Other variables */\n}\n\n.sf-field-container {\n  margin-bottom: calc(var(--sf-spacing-unit) * 2);\n}\n\n.sf-label {\n  font-family: var(--sf-font-family);\n  color: var(--sf-color-text);\n  margin-bottom: var(--sf-spacing-unit);\n}\n\n.sf-error-message {\n  color: var(--sf-color-error);\n  font-size: 0.75rem;\n  margin-top: var(--sf-spacing-unit);\n}\n```",
+        "details": "Implement CSS variables:\n1. Define standard CSS variables for colors, spacing, typography, etc.\n2. Create default theme with sensible values\n3. Apply variables to all components\n4. Document override patterns\n5. Create example themes\n\nExample implementation:\n```css\n:root {\n  --sf-color-primary: #1976d2;\n  --sf-color-error: #d32f2f;\n  --sf-border-radius: 4px;\n  --sf-spacing-unit: 8px;\n  --sf-font-family: system-ui, -apple-system, sans-serif;\n  /* Other variables */\n}\n\n.sf-field-container {\n  margin-bottom: calc(var(--sf-spacing-unit) * 2);\n}\n\n.sf-label {\n  font-family: var(--sf-font-family);\n  color: var(--sf-color-text);\n  margin-bottom: var(--sf-spacing-unit);\n}\n\n.sf-error-message {\n  color: var(--sf-color-error);\n  font-size: 0.75rem;\n  margin-top: var(--sf-spacing-unit);\n}\n```\n<info added on 2025-06-24T07:38:55.669Z>\n## Naming Convention\n- Prefix: All variables should start with `sf-` (SchemaForm) prefix\n- Structure: `sf-<group>-<property>-<state(optional)>` (e.g., `sf-color-text`, `sf-border-color-error`)\n- Case: Use lowercase kebab-case\n\n## Standard Variables List\n\n| Variable Name | Description | Default Value |\n|---|---|---|\n| `--sf-color-text` | Default text color | `#333` |\n| `--sf-color-primary` | Primary action color (buttons, etc.) | `#007bff` |\n| `--sf-color-error` | Error message and border color | `#dc3545` |\n| `--sf-border-color` | Default input field border color | `#ced4da` |\n| `--sf-border-radius` | Border roundness | `0.25rem` |\n| `--sf-spacing-unit` | Base spacing unit for layout | `8px` |\n\n## Fallback Strategy\n```css\n.sf-field__error {\n  color: var(--sf-color-error, #dc3545);\n}\n```\n\n## Implementation Requirements\n1. Define CSS custom properties\n2. Create default stylesheet\n3. Include fallback values\n4. Document theme customization guidelines\n</info added on 2025-06-24T07:38:55.669Z>",
         "testStrategy": "Test theme overrides with different values. Verify all components respect CSS variables. Test with different browsers for compatibility.",
         "priority": "medium",
         "dependencies": [
@@ -377,7 +450,7 @@
     ],
     "metadata": {
       "created": "2025-06-24T07:12:13.472Z",
-      "updated": "2025-06-24T07:12:13.472Z",
+      "updated": "2025-06-24T07:39:34.188Z",
       "description": "Tasks for master context"
     }
   }
