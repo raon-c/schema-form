@@ -80,27 +80,74 @@ graph TD
     4. 필드 렌더링 루프에서, 현재 필드의 `name`이 `validatingFields` Set에 포함되어 있는지 여부로 '검증 중' 상태를 판단하고, 이 상태(`isValidating` prop)를 `FormFieldLayout`에 전달하여 필드별 로딩 UI를 표시합니다.
     5. **상태 정리(Cleanup):** 필드의 비동기 검증이 완료되면(성공 또는 실패), 해당 필드의 `name`을 `validatingFields` Set에서 제거합니다. 또한, `formState.isValidating`이 `true`에서 `false`로 변경되는 시점을 `useEffect`로 감지하여, 모든 검증이 완료되었음을 확인하고 `validatingFields` Set을 비우는 정리 로직을 수행하여 상태 불일치를 방지합니다.
 
-### 4.3. UI Adapter
+### 4.3. UI 어댑터 (UI Adapter)
 
-- **역할:** `SchemaForm`의 핵심 로직과 외부 UI 라이브러리를 연결하는 어댑터.
-- **인터페이스 (예시):**
+- **패턴 및 역할:** UI 어댑터는 **어댑터 패턴(Adapter Pattern)**을 활용하여 `SchemaForm`의 핵심 렌더링 로직과 실제 UI 구현체(디자인 시스템) 사이의 '다리' 역할을 수행합니다. 이 설계의 핵심 목표는 **관심사의 분리**를 극대화하는 것입니다. 즉, "어떤 데이터를 어떻게 렌더링할지"에 대한 결정은 `SchemaForm`이 하고, "그것을 화면에 어떻게 그릴지"에 대한 구체적인 방법은 UI 어댑터에게 위임합니다.
+
+    이를 통해 `SchemaForm`은 MUI, Ant Design, Chakra UI 등 특정 UI 라이브러리에 대한 종속성 없이 독립적으로 존재할 수 있습니다. 개발자는 프로젝트의 기술 스택이나 디자인 시스템에 맞는 어댑터만 제공하면, 동일한 스키마와 로직을 재사용하여 완전히 다른 모습의 폼을 렌더링할 수 있습니다. 이런 관점에서 각 UI 어댑터는 폼을 렌더링하기 위한 일종의 교체 가능한 **전략(Strategy)**으로 볼 수도 있습니다.
+
+- **동작 원리:**
+    1. `<SchemaForm>`은 스키마를 순회하며 각 필드의 타입(`string`, `boolean` 등)과 메타데이터(`componentType: 'password'`)를 확인합니다.
+    2. 이 정보를 `key`로 사용하여 `props`로 전달된 `uiAdapter` 객체에서 렌더링을 담당할 React 컴포넌트를 찾습니다.
+    3. 찾아낸 컴포넌트에게 `react-hook-form`의 상태(`field`, `formState`)와 스키마 메타데이터(`label`, `placeholder` 등)를 `props`로 전달하여 렌더링을 위임합니다.
+
+- **인터페이스 (계약):** UI 어댑터와 그 안의 컴포넌트들은 `SchemaForm`과 명확한 `props` 계약을 따릅니다.
 
     ```typescript
     import { ControllerRenderProps, FormState, FieldValues } from 'react-hook-form';
 
+    // UI 어댑터의 기본 구조: 필드 타입을 키로, React 컴포넌트를 값으로 가집니다.
     interface UIAdapter {
       [fieldType: string]: React.ComponentType<FieldProps>;
     }
 
+    // 모든 UI 어댑터 내 컴포넌트가 받아야 하는 표준 props 인터페이스
     interface FieldProps {
-      field: ControllerRenderProps<FieldValues, string>;
+      // react-hook-form이 제공하는 필드 제어 props (onChange, onBlur, value 등)
+      field: ControllerRenderProps<FieldValues, string>; 
+      // 폼의 전반적인 상태 (errors, isValidating 등)
       formState: FormState<FieldValues>;
+      // 스키마의 meta()에서 추출된 UI 관련 정보
       label: string;
       placeholder?: string;
+      helperText?: string;
     }
     ```
 
-- **구현체 (MUIAdapter):** `string` 타입에는 `TextField`, `boolean` 타입에는 `CheckboxWithLabel` 등 MUI 컴포넌트를 반환하는 객체.
+- **구현체 예시 (MUIAdapter):**
+
+    ```typescript
+    // packages/adapter-mui/src/index.ts
+    import { TextField, Checkbox, FormControlLabel } from '@mui/material';
+
+    export const muiAdapter: UIAdapter = {
+      string: ({ field, formState, label, placeholder }) => (
+        <TextField
+          {...field}
+          label={label}
+          placeholder={placeholder}
+          error={!!formState.errors[field.name]}
+          helperText={formState.errors[field.name]?.message as string}
+        />
+      ),
+      boolean: ({ field, label }) => (
+        <FormControlLabel
+          control={<Checkbox {...field} checked={field.value} />}
+          label={label}
+        />
+      ),
+      // 'password' 타입에 대한 별도 컴포넌트 정의
+      password: ({ field, formState, label }) => (
+        <TextField
+          {...field}
+          type="password"
+          label={label}
+          error={!!formState.errors[field.name]}
+        />
+      ),
+      // ... 다른 타입들에 대한 컴포넌트들
+    };
+    ```
 
 ## 5. 데이터 및 제어 흐름 (Data & Control Flow)
 
