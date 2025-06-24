@@ -25,14 +25,33 @@
 | G-3 | 프로젝트에 설정된 린팅 및 포맷팅 규칙(`eslint-config`, `typescript-config`)을 따릅니다. | ❌ 개인적인 스타일이나 다른 포맷 규칙으로 코드를 재포맷하지 않습니다. |
 | G-4 | 3개 이상의 파일을 수정하거나 300줄 이상의 코드를 변경할 경우, 먼저 계획을 제시하고 개발자의 확인을 받습니다. | ❌ 핵심 아키텍처(예: `<SchemaForm>` 컴포넌트, `UIAdapter` 인터페이스)를 인간의 가이드 없이 리팩토링하지 않습니다. |
 | G-5 | 현재 주어진 태스크의 컨텍스트 내에서 작업을 수행합니다. | ❌ "새로운 작업"을 지시받았을 때 이전 프롬프트의 컨텍스트를 이어가지 말고, 새로운 세션에서 시작합니다. |
+| G-6 | 중요한 아키텍처/기술적 결정사항에 대해 `/decisions`에 ADR 초안 작성을 제안하고 `proposed` 상태로 생성합니다. | ❌ 인간 개발자의 승인 없이 ADR 상태를 `proposed`에서 `accepted`로 변경하거나, 사소한 변경에 대해 ADR을 생성하지 않습니다. |
 
 ---
 
-## 2. Task Master 개발 워크플로우
+## 2. 결정사항 기록 (Architecture Decision Records)
+
+`SchemaForm` 프로젝트의 중요한 기술적/아키텍처적 결정사항은 `/decisions` 디렉토리에 ADR(Architecture Decision Record) 형식으로 기록됩니다.
+
+### 2.1. 핵심 원칙
+
+- **아키텍처 변경**, **라이브러리 도입/변경**, **중요한 설계 결정** 등에 대해 ADR을 작성합니다.
+- AI는 중요한 결정사항에 대해 ADR 초안을 **제안**할 수 있으나, 상태 변경(`proposed` → `accepted`)은 인간 개발자만 가능합니다.
+- 파일명은 `NNNN-kebab-case-title.md` 형식을 따릅니다. (예: `0001-use-zod-for-schema-validation.md`)
+
+### 2.2. 참조 문서
+
+- **상세 가이드**: [decisions/AGENTS.md](mdc:decisions/AGENTS.md) - ADR 작성 절차와 템플릿 사용법
+- **템플릿**: [decisions/template.md](mdc:decisions/template.md) - 새 ADR 작성 시 복사하여 시작
+- **모범 사례**: [decisions/example.md](mdc:decisions/example.md) - 고품질 ADR 작성 예시
+
+---
+
+## 3. Task Master 개발 워크플로우
 
 `SchemaForm` 프로젝트는 `Task Master`를 사용하여 모든 작업을 관리합니다. AI 에이전트는 제공된 MCP 도구를 통해 Task Master와 상호작용하는 것이 좋습니다.
 
-### 2.1. 핵심 명령어 (Essential Commands)
+### 3.1. 핵심 명령어 (Essential Commands)
 
 | 분류 | 명령어 | 설명 |
 |---|---|---|
@@ -49,7 +68,7 @@
 | **의존성 관리** | `task-master add-dependency --id=A --depends-on=B` | B를 A의 선행 작업으로 등록 |
 | | `task-master validate-dependencies` | 의존성 오류(순환참조 등) 검사 |
 
-### 2.2. MCP 통합 (권장)
+### 3.2. MCP 통합 (권장)
 
 AI 에이전트는 CLI 명령어 대신 MCP(Multi-Context Prompt) 서버를 통해 Task Master 기능을 사용하는 것이 좋습니다. 이는 더 나은 성능과 구조화된 데이터 교환을 제공합니다.
 
@@ -68,21 +87,21 @@ AI 에이전트는 CLI 명령어 대신 MCP(Multi-Context Prompt) 서버를 통�
 | `update_task` | 작업 업데이트 (`task-master update-task`) |
 | `update_subtask` | 하위 작업 업데이트 (`task-master update-subtask`) |
 
-### 2.3. 표준 개발 절차
+### 3.3. 표준 개발 절차
 
-1.  **초기 설정**:
-    -   `initialize_project` 또는 `task-master init`으로 프로젝트를 설정합니다.
-    -   `agent/PRD.md` 문서를 기반으로 `parse_prd` 또는 `task-master parse-prd`를 실행하여 초기 작업 목록을 생성합니다.
+1. **초기 설정**:
+    - `initialize_project` 또는 `task-master init`으로 프로젝트를 설정합니다.
+    - `agent/PRD.md` 문서를 기반으로 `parse_prd` 또는 `task-master parse-prd`를 실행하여 초기 작업 목록을 생성합니다.
 
-2.  **일상 개발 루프**:
-    -   `next_task` 또는 `task-master next`로 다음에 할 작업을 확인합니다.
-    -   `get_task` 또는 `task-master show <id>`로 작업의 세부 요구사항을 파악합니다.
-    -   코드를 구현하며 발견한 내용이나 진행 상황을 `update_subtask`를 통해 기록합니다.
-    -   작업이 완료되면 `set_task_status`를 사용하여 상태를 `done`으로 변경합니다.
+2. **일상 개발 루프**:
+    - `next_task` 또는 `task-master next`로 다음에 할 작업을 확인합니다.
+    - `get_task` 또는 `task-master show <id>`로 작업의 세부 요구사항을 파악합니다.
+    - 코드를 구현하며 발견한 내용이나 진행 상황을 `update_subtask`를 통해 기록합니다.
+    - 작업이 완료되면 `set_task_status`를 사용하여 상태를 `done`으로 변경합니다.
 
 ---
 
-## 3. 빌드, 테스트 및 유틸리티 명령어
+## 4. 빌드, 테스트 및 유틸리티 명령어
 
 본 프로젝트는 `pnpm` 워크스페이스와 `Turborepo`를 사용하여 관리됩니다.
 
@@ -108,7 +127,7 @@ pnpm lint
 
 ---
 
-## 4. 코딩 표준
+## 5. 코딩 표준
 
 - **언어**: React 19+, TypeScript 5.5+
 - **상태 관리**: `react-hook-form` v7+ (핵심 엔진)
@@ -120,9 +139,9 @@ pnpm lint
 
 ---
 
-## 5. 프로젝트 구조
+## 6. 프로젝트 구조
 
-### 5.1. 소스 코드 레이아웃
+### 6.1. 소스 코드 레이아웃
 
 모노레포 구조로 구성되어 있으며, 각 패키지는 명확한 책임을 가집니다.
 
@@ -135,9 +154,9 @@ pnpm lint
 | `packages/eslint-config/` | 모노레포 전체에서 공유하는 ESLint 설정 |
 | `packages/typescript-config/` | 공유 TypeScript(`tsconfig.json`) 설정 |
 
-### 5.2. Task Master 파일 구조
+### 6.2. Task Master 파일 구조
 
-```
+```folder
 project/
 ├── .taskmaster/
 │   ├── tasks/              # Task 파일 디렉토리
@@ -160,7 +179,7 @@ project/
 
 ---
 
-## 6. 앵커 주석 (Anchor Comments)
+## 7. 앵커 주석 (Anchor Comments)
 
 코드베이스 전반에 걸쳐 AI와 개발자 모두에게 유용한 인라인 지식을 남기기 위해 특별한 형식의 주석을 사용합니다.
 
@@ -184,15 +203,16 @@ function getByPath(obj: object, path: string) {
 
 ---
 
-## 7. 커밋 규칙
+## 8. 커밋 규칙
 
 - **세분화된 커밋**: 하나의 논리적 변경사항 당 하나의 커밋을 원칙으로 합니다.
 - **AI 생성 커밋 태그**: AI가 생성한 커밋에는 메시지 끝에 `[AI]` 태그를 추가합니다. (예: `feat: Add support for custom field layout [AI]`)
+- **ADR 관련 커밋**: 결정사항 기록을 추가하거나 수정할 때는 `docs(adr):` 접두사를 사용합니다. (예: `docs(adr): Add ADR for Zod schema validation [AI]`)
 - **명확한 커밋 메시지**: "무엇을" 변경했는지보다 "왜" 변경했는지 설명합니다.
 
 ---
 
-## 8. 핵심 아키텍처: 어댑터 패턴
+## 9. 핵심 아키텍처: 어댑터 패턴
 
 - **UI 어댑터 수정**: 새로운 UI 컴포넌트를 지원하거나 기존 컴포넌트의 동작을 변경하려면, 관련 `adapter-*` 패키지(예: `packages/adapter-mui`)를 수정해야 합니다.
 - **`UIAdapter` 인터페이스**: 모든 어댑터는 `packages/schemaform-core/src/types.ts`에 정의된 `UIAdapter` 및 `FieldProps` 인터페이스를 준수해야 합니다.
@@ -231,13 +251,13 @@ export const muiAdapter: UIAdapter = {
 
 ---
 
-## 9. 제어(Controlled) vs 비제어(Uncontrolled) 모드
+## 10. 제어(Controlled) vs 비제어(Uncontrolled) 모드
 
 - **비제어 모드 (기본)**: `<SchemaForm>`에 `schema`만 전달하면, 컴포넌트가 내부적으로 `useForm`을 호출하여 모든 상태를 직접 관리합니다. 가장 간단한 사용 방식입니다.
 - **제어 모드**: 외부에서 생성한 `useForm`의 `control` 객체를 `<SchemaForm>`에 `prop`으로 주입할 수 있습니다. 이를 통해 폼 상태를 상위 컴포넌트에서 직접 제어하고 다른 상태와 연동할 수 있습니다.
 - **`control` prop이 전달되면, `<SchemaForm>`은 내부 `useForm` 초기화 로직을 건너뜁니다.** `defaultValues`, `resolver` 등은 모두 외부 `useForm`에서 설정해야 합니다.
 
-```typescript
+```tsx
 // 제어 모드 예시
 function MyAdvancedForm() {
   const { control, handleSubmit, watch } = useForm({
@@ -260,7 +280,7 @@ function MyAdvancedForm() {
 
 ---
 
-## 10. 테스트 프레임워크 (Vitest)
+## 11. 테스트 프레임워크 (Vitest)
 
 - `packages` 내의 `*.test.ts` 또는 `*.test.tsx` 패턴을 가진 파일들이 테스트 대상입니다.
 - 테스트는 실제 `zod` 스키마와 Mock UI 어댑터를 사용하여 다양한 렌더링 및 인터랙션 시나리오를 검증합니다.
@@ -268,14 +288,14 @@ function MyAdvancedForm() {
 
 ---
 
-## 11. `AGENTS.md` 파일 관련 규칙
+## 12. `AGENTS.md` 파일 관련 규칙
 
 - 특정 패키지(`packages/*`) 내에서 작업을 시작하기 전에, 해당 디렉토리에 `AGENTS.md` 파일이 있는지 확인합니다. (존재할 경우, 해당 파일의 컨텍스트를 우선적으로 따릅니다.)
 - 패키지의 구조나 핵심 로직에 중요한 변경을 가했다면, 해당 내용을 그 디렉토리의 `AGENTS.md`에 문서화하는 것을 제안합니다.
 
 ---
 
-## 12. 흔한 실수 및 주의사항
+## 13. 흔한 실수 및 주의사항
 
 - **잘못된 모드 사용**: 외부에서 폼 상태를 제어해야 할 때 `control` prop을 전달하지 않거나, 간단한 폼에 불필요하게 제어 모드를 사용하는 경우.
 - **어댑터와 스키마 불일치**: 스키마의 `meta.componentType`에 정의된 값을 처리하는 컴포넌트가 `UIAdapter`에 존재하지 않는 경우.
@@ -284,14 +304,14 @@ function MyAdvancedForm() {
 
 ---
 
-## 13. 버전 관리
+## 14. 버전 관리
 
 - 각 패키지는 `package.json`에서 독립적으로 버전을 관리하며, Semantic Versioning(SemVer)을 따릅니다.
 - `pnpm`의 워크스페이스 기능을 통해 버전 관리가 이루어집니다. 릴리즈는 `changesets`와 같은 도구를 활용할 수 있습니다.
 
 ---
 
-## 14. 주요 파일 및 패턴 참조
+## 15. 주요 파일 및 패턴 참조
 
 - **`<SchemaForm>` 컴포넌트**:
   - 위치: `packages/schemaform-core/src/components/SchemaForm.tsx`
@@ -303,10 +323,14 @@ function MyAdvancedForm() {
   - 패턴: `z.string().meta({ label: '이름', componentType: 'password' })` 와 같이 `meta()`를 사용하여 UI 힌트를 스키마에 직접 정의합니다.
 - **필드 레이아웃 커스터마이징**:
   - 패턴: `<SchemaForm renderFieldLayout={...} />` prop을 사용하여 레이블, 입력 필드, 에러 메시지의 전체 구조를 커스터마이징합니다.
+- **결정사항 기록 (ADR)**:
+  - ADR 템플릿: `/decisions/template.md`
+  - ADR 모범 사례: `/decisions/example.md`
+  - ADR 작성 가이드: `/decisions/AGENTS.md`
 
 ---
 
-## 15. 도메인 특화 용어
+## 16. 도메인 특화 용어
 
 - **SchemaForm**: 라이브러리 자체 또는 최상위 `<SchemaForm>` 컴포넌트.
 - **Schema (스키마)**: `zod`로 정의된 객체. 폼의 데이터 구조, 유효성 검증, UI 메타데이터를 포함하는 단일 진실 공급원.
