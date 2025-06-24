@@ -60,8 +60,8 @@ graph TD
 
 - **역할:** 라이브러리의 메인 진입점이자 전체 플로우를 조율하는 오케스트레이터.
 - **책임:**
-  - 사용자로부터 `schema`, `uiAdapter`, `onSubmit` 등의 `props`를 전달받습니다.
-  - `useForm` 훅을 초기화하고, `control`, `formState` 등의 `react-hook-form` 인스턴스를 내부적으로 관리합니다.
+  - 사용자로부터 `schema`, `uiAdapter`, `onSubmit`, `mode` 등의 `props`를 전달받습니다.
+  - `useForm` 훅을 초기화하고, `control`, `formState`, `trigger` 등의 `react-hook-form` 인스턴스를 내부적으로 관리합니다.
   - 스키마 객체를 순회하며 각 필드에 대한 렌더링을 `UIAdapter`에 위임합니다.
   - 렌더링된 필드에 `react-hook-form`의 `<Controller>`를 통해 필요한 `props`(e.g., `onChange`, `onBlur`, `value`, `ref`)를 주입합니다.
 
@@ -89,12 +89,12 @@ graph TD
 - **동작 원리:**
     1. `<SchemaForm>`은 스키마를 순회하며 각 필드의 타입(`string`, `boolean` 등)과 메타데이터(`componentType: 'password'`)를 확인합니다.
     2. 이 정보를 `key`로 사용하여 `props`로 전달된 `uiAdapter` 객체에서 렌더링을 담당할 React 컴포넌트를 찾습니다.
-    3. 찾아낸 컴포넌트에게 `react-hook-form`의 상태(`field`, `formState`)와 스키마 메타데이터(`label`, `placeholder` 등)를 `props`로 전달하여 렌더링을 위임합니다.
+    3. 찾아낸 컴포넌트에게 `react-hook-form`의 상태(`field`, `formState`, `trigger`)와 스키마 메타데이터(`label`, `placeholder`, `meta` 객체 등)를 `props`로 전달하여 렌더링을 위임합니다.
 
 - **인터페이스 (계약):** UI 어댑터와 그 안의 컴포넌트들은 `SchemaForm`과 명확한 `props` 계약을 따릅니다.
 
     ```typescript
-    import { ControllerRenderProps, FormState, FieldValues } from 'react-hook-form';
+    import { ControllerRenderProps, FormState, FieldValues, UseFormTrigger } from 'react-hook-form';
 
     // UI 어댑터의 기본 구조: 필드 타입을 키로, React 컴포넌트를 값으로 가집니다.
     interface UIAdapter {
@@ -111,8 +111,14 @@ graph TD
       label: string;
       placeholder?: string;
       helperText?: string;
+      // 필드별 동작 제어를 위한 전체 메타데이터
+      meta: FieldMetadata;
+      // 필드 유효성 검사를 수동으로 트리거하는 함수
+      trigger: UseFormTrigger<FieldValues>;
     }
     ```
+
+- **어댑터 컴포넌트의 책임:** 필드 레벨 유효성 검사를 지원하기 위해, UI 어댑터 내의 컴포넌트는 `meta.validationTrigger` 값이 있을 경우, 해당 이벤트(`onChange` 또는 `onBlur`) 핸들러 내에서 `props`로 전달받은 `trigger(field.name)` 함수를 호출해야 할 책임이 있습니다.
 
 - **구현체 예시 (MUIAdapter):**
 
@@ -152,13 +158,19 @@ graph TD
 ## 5. 데이터 및 제어 흐름 (Data & Control Flow)
 
 1. **초기화 (Initialization):**
-    사용자가 `<SchemaForm>`을 렌더링하면, 컴포넌트는 전달받은 `zod` 스키마를 `@hookform/resolvers/zod`를 통해 `resolver`로 변환하고, 이를 사용하여 `useForm` 훅을 초기화합니다.
+    사용자가 `<SchemaForm>`을 렌더링하면, 컴포넌트는 `mode` prop과 `zod` 스키마를 기반으로 `@hookform/resolvers/zod`를 사용하여 `useForm` 훅을 초기화합니다. 이 과정에서 `control`, `formState`, `trigger` 등의 함수와 상태가 생성됩니다.
+
 2. **렌더링 (Rendering):**
-    `<SchemaForm>`은 스키마를 순회하며 각 필드를 `react-hook-form`의 `<Controller>`로 감쌉니다. `<Controller>`의 `render` prop 내에서 `UIAdapter`를 호출하여 실제 UI 컴포넌트를 렌더링하고 `field`와 `formState`를 전달합니다.
+    `<SchemaForm>`은 스키마를 순회하며 각 필드에 대해 `react-hook-form`의 `<Controller>`로 감쌉니다. `<Controller>`의 `render` prop 내에서, 해당 필드의 `meta` 데이터와 `trigger` 함수 등을 포함한 `props`를 `UIAdapter`에 등록된 컴포넌트로 전달하여 렌더링을 위임합니다.
+
 3. **상호작용 및 유효성 검사 (Interaction & Validation):**
-    사용자 입력 시 `onChange`가 트리거되어 `react-hook-form`의 상태가 업데이트됩니다. 상태 변경에 따라 `resolver`를 통한 유효성 검사가 자동으로 수행되고, `formState.errors`가 업데이트됩니다.
+    사용자의 입력과 상호작용할 때, 유효성 검사가 실행되는 시점은 `<SchemaForm>`의 `mode` prop 설정과 각 필드의 스키마 메타데이터에 따라 결정됩니다.
+    - **폼 레벨(Form-Level) 제어:** `<SchemaForm>`의 `mode` prop (`'onSubmit'`(기본값), `'onBlur'`, `'onChange'`)을 통해 폼 전체의 기본 유효성 검사 시점을 설정합니다. 예를 들어, `mode='onSubmit'`으로 설정하면 사용자가 제출 버튼을 누르기 전까지는 유효성 검사가 실행되지 않습니다.
+    - **필드 레벨(Field-Level) 재정의:** 더 세밀한 제어가 필요할 경우, 스키마의 `meta` 객체에 `validationTrigger: 'onChange' | 'onBlur'`를 명시하여 특정 필드의 유효성 검사 시점을 개별적으로 설정할 수 있습니다. 예를 들어, UI 어댑터는 `validationTrigger` 값을 확인하여 해당 이벤트(onChange/onBlur)가 발생했을 때 `trigger()` 함수를 호출하도록 구현할 수 있습니다.
+    - **상태 업데이트:** 유효성 검사가 트리거되면, `resolver`가 실행되고 그 결과에 따라 `formState.errors` 객체가 업데이트됩니다. 이 상태 변경은 UI에 즉시 반영되어 사용자에게 피드백을 제공합니다.
+
 4. **제출 (Submission):**
-    제출 시 `react-hook-form`의 `handleSubmit`이 최종 유효성 검사를 수행합니다. 성공 시 사용자에게 받은 `onSubmit` 콜백이 데이터와 함께 호출됩니다.
+    폼 제출 시 `react-hook-form`의 `handleSubmit`이 최종 유효성 검사를 수행합니다. (만약 `mode`가 `onSubmit`이 아니었다면, 이미 유효한 상태일 가능성이 높습니다.) 검사에 성공하면 사용자에게 받은 `onSubmit` 콜백이 정제된 데이터와 함께 호출됩니다.
 
 ## 6. API 설계 (초안)
 
@@ -184,6 +196,7 @@ function MyComponent() {
       schema={mySchema}
       uiAdapter={muiAdapter}
       onSubmit={handleSubmit}
+      mode="onSubmit" // 폼 전체의 유효성 검사 모드 설정
     />
   );
 }
@@ -269,6 +282,7 @@ function MyAdvancedComponent() {
       helperText?: string;
       componentType?: 'password' | 'textarea' | string;
       component?: React.ComponentType<FieldProps>;
+      validationTrigger?: 'onChange' | 'onBlur';
     }
     ```
 
@@ -286,6 +300,10 @@ function MyAdvancedComponent() {
       bio: z.string().optional().meta({
         label: '자기소개',
         componentType: 'textarea', // 특수 컴포넌트 지정
+      }),
+      email: z.string().email().meta({
+        label: '이메일',
+        validationTrigger: 'onBlur', // 이메일 필드는 focus out 시점에만 검증
       }),
     });
     ```
