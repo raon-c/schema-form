@@ -2,6 +2,7 @@
 
 > **목표** – 이 문서는 `SchemaForm` 라이브러리 개발에 참여하는 모든 AI 어시스턴트와 인간 개발자를 위한 온보딩 매뉴얼입니다.
 > 라이브러리의 코딩 표준, 설계 원칙, 작업 절차를 명시하여 AI가 효율적으로 기여하고, 인간은 아키텍처, 테스트, 도메인 판단 등 핵심적인 역할에 집중할 수 있도록 돕습니다.
+> **Task Master**를 활용하여 프로젝트의 모든 작업을 체계적으로 관리합니다.
 
 ---
 
@@ -27,7 +28,61 @@
 
 ---
 
-## 2. 빌드, 테스트 및 유틸리티 명령어
+## 2. Task Master 개발 워크플로우
+
+`SchemaForm` 프로젝트는 `Task Master`를 사용하여 모든 작업을 관리합니다. AI 에이전트는 제공된 MCP 도구를 통해 Task Master와 상호작용하는 것이 좋습니다.
+
+### 2.1. 핵심 명령어 (Essential Commands)
+
+| 분류 | 명령어 | 설명 |
+|---|---|---|
+| **프로젝트 설정** | `task-master init` | 현재 프로젝트에 Task Master 초기 설정 |
+| | `task-master parse-prd [file]` | PRD 문서를 분석하여 초기 작업 목록 생성 |
+| **일상 개발** | `task-master list` | 모든 작업과 상태 보기 |
+| | `task-master next` | 다음에 작업할 태스크 추천 받기 |
+| | `task-master show <id>` | 특정 작업의 상세 정보 보기 |
+| | `task-master set-status --id=<id> --status=done` | 작업 상태를 '완료'로 변경 |
+| **작업 관리** | `task-master add-task --prompt="..."` | AI를 통해 새 작업 추가 |
+| | `task-master expand --id=<id>` | 복잡한 작업을 하위 작업으로 분해 |
+| | `task-master update-task --id=<id> --prompt="..."` | 특정 작업 내용 업데이트 |
+| | `task-master update-subtask --id=<id> --prompt="..."` | 하위 작업에 진행 상황 기록 |
+| **의존성 관리** | `task-master add-dependency --id=A --depends-on=B` | B를 A의 선행 작업으로 등록 |
+| | `task-master validate-dependencies` | 의존성 오류(순환참조 등) 검사 |
+
+### 2.2. MCP 통합 (권장)
+
+AI 에이전트는 CLI 명령어 대신 MCP(Multi-Context Prompt) 서버를 통해 Task Master 기능을 사용하는 것이 좋습니다. 이는 더 나은 성능과 구조화된 데이터 교환을 제공합니다.
+
+**주요 MCP 도구:**
+
+| MCP Tool | 설명 (CLI 명령어) |
+|---|---|
+| `initialize_project` | 프로젝트 초기화 (`task-master init`) |
+| `parse_prd` | PRD 문서 분석 (`task-master parse-prd`) |
+| `get_tasks` | 작업 목록 조회 (`task-master list`) |
+| `next_task` | 다음 작업 추천 (`task-master next`) |
+| `get_task` | 특정 작업 상세 조회 (`task-master show`) |
+| `set_task_status` | 작업 상태 변경 (`task-master set-status`) |
+| `add_task` | 새 작업 추가 (`task-master add-task`) |
+| `expand_task` | 작업 분해 (`task-master expand`) |
+| `update_task` | 작업 업데이트 (`task-master update-task`) |
+| `update_subtask` | 하위 작업 업데이트 (`task-master update-subtask`) |
+
+### 2.3. 표준 개발 절차
+
+1.  **초기 설정**:
+    -   `initialize_project` 또는 `task-master init`으로 프로젝트를 설정합니다.
+    -   `agent/PRD.md` 문서를 기반으로 `parse_prd` 또는 `task-master parse-prd`를 실행하여 초기 작업 목록을 생성합니다.
+
+2.  **일상 개발 루프**:
+    -   `next_task` 또는 `task-master next`로 다음에 할 작업을 확인합니다.
+    -   `get_task` 또는 `task-master show <id>`로 작업의 세부 요구사항을 파악합니다.
+    -   코드를 구현하며 발견한 내용이나 진행 상황을 `update_subtask`를 통해 기록합니다.
+    -   작업이 완료되면 `set_task_status`를 사용하여 상태를 `done`으로 변경합니다.
+
+---
+
+## 3. 빌드, 테스트 및 유틸리티 명령어
 
 본 프로젝트는 `pnpm` 워크스페이스와 `Turborepo`를 사용하여 관리됩니다.
 
@@ -53,7 +108,7 @@ pnpm lint
 
 ---
 
-## 3. 코딩 표준
+## 4. 코딩 표준
 
 - **언어**: React 19+, TypeScript 5.5+
 - **상태 관리**: `react-hook-form` v7+ (핵심 엔진)
@@ -65,7 +120,9 @@ pnpm lint
 
 ---
 
-## 4. 프로젝트 레이아웃 및 핵심 컴포넌트
+## 5. 프로젝트 구조
+
+### 5.1. 소스 코드 레이아웃
 
 모노레포 구조로 구성되어 있으며, 각 패키지는 명확한 책임을 가집니다.
 
@@ -78,6 +135,22 @@ pnpm lint
 | `packages/eslint-config/` | 모노레포 전체에서 공유하는 ESLint 설정 |
 | `packages/typescript-config/` | 공유 TypeScript(`tsconfig.json`) 설정 |
 
+### 5.2. Task Master 파일 구조
+
+```
+project/
+├── .taskmaster/
+│   ├── tasks/              # Task 파일 디렉토리
+│   │   ├── tasks.json      # 기본 태스크 데이터베이스
+│   │   └── task-1.md       # 개별 태스크 마크다운 파일
+│   ├── docs/
+│   │   └── prd.txt         # 작업 생성을 위한 요구사항 문서
+│   └── config.json         # AI 모델 및 설정
+├── .env                    # CLI 사용을 위한 API 키
+└── agent/
+    └── AGENTS.md           # 이 파일 - 프로젝트 개발 가이드
+```
+
 **주요 도메인 모델**:
 
 - **`<SchemaForm>` Component**: 라이브러리의 메인 진입점이자 오케스트레이터. `schema`, `uiAdapter` 등을 `props`로 받아 폼 전체를 관리하고 렌더링합니다.
@@ -87,7 +160,7 @@ pnpm lint
 
 ---
 
-## 5. 앵커 주석 (Anchor Comments)
+## 6. 앵커 주석 (Anchor Comments)
 
 코드베이스 전반에 걸쳐 AI와 개발자 모두에게 유용한 인라인 지식을 남기기 위해 특별한 형식의 주석을 사용합니다.
 
@@ -111,7 +184,7 @@ function getByPath(obj: object, path: string) {
 
 ---
 
-## 6. 커밋 규칙
+## 7. 커밋 규칙
 
 - **세분화된 커밋**: 하나의 논리적 변경사항 당 하나의 커밋을 원칙으로 합니다.
 - **AI 생성 커밋 태그**: AI가 생성한 커밋에는 메시지 끝에 `[AI]` 태그를 추가합니다. (예: `feat: Add support for custom field layout [AI]`)
@@ -119,7 +192,7 @@ function getByPath(obj: object, path: string) {
 
 ---
 
-## 7. 핵심 아키텍처: 어댑터 패턴
+## 8. 핵심 아키텍처: 어댑터 패턴
 
 - **UI 어댑터 수정**: 새로운 UI 컴포넌트를 지원하거나 기존 컴포넌트의 동작을 변경하려면, 관련 `adapter-*` 패키지(예: `packages/adapter-mui`)를 수정해야 합니다.
 - **`UIAdapter` 인터페이스**: 모든 어댑터는 `packages/schemaform-core/src/types.ts`에 정의된 `UIAdapter` 및 `FieldProps` 인터페이스를 준수해야 합니다.
@@ -158,7 +231,7 @@ export const muiAdapter: UIAdapter = {
 
 ---
 
-## 8. 제어(Controlled) vs 비제어(Uncontrolled) 모드
+## 9. 제어(Controlled) vs 비제어(Uncontrolled) 모드
 
 - **비제어 모드 (기본)**: `<SchemaForm>`에 `schema`만 전달하면, 컴포넌트가 내부적으로 `useForm`을 호출하여 모든 상태를 직접 관리합니다. 가장 간단한 사용 방식입니다.
 - **제어 모드**: 외부에서 생성한 `useForm`의 `control` 객체를 `<SchemaForm>`에 `prop`으로 주입할 수 있습니다. 이를 통해 폼 상태를 상위 컴포넌트에서 직접 제어하고 다른 상태와 연동할 수 있습니다.
@@ -187,7 +260,7 @@ function MyAdvancedForm() {
 
 ---
 
-## 9. 테스트 프레임워크 (Vitest)
+## 10. 테스트 프레임워크 (Vitest)
 
 - `packages` 내의 `*.test.ts` 또는 `*.test.tsx` 패턴을 가진 파일들이 테스트 대상입니다.
 - 테스트는 실제 `zod` 스키마와 Mock UI 어댑터를 사용하여 다양한 렌더링 및 인터랙션 시나리오를 검증합니다.
@@ -195,14 +268,14 @@ function MyAdvancedForm() {
 
 ---
 
-## 10. `AGENTS.md` 파일 관련 규칙
+## 11. `AGENTS.md` 파일 관련 규칙
 
 - 특정 패키지(`packages/*`) 내에서 작업을 시작하기 전에, 해당 디렉토리에 `AGENTS.md` 파일이 있는지 확인합니다. (존재할 경우, 해당 파일의 컨텍스트를 우선적으로 따릅니다.)
 - 패키지의 구조나 핵심 로직에 중요한 변경을 가했다면, 해당 내용을 그 디렉토리의 `AGENTS.md`에 문서화하는 것을 제안합니다.
 
 ---
 
-## 11. 흔한 실수 및 주의사항
+## 12. 흔한 실수 및 주의사항
 
 - **잘못된 모드 사용**: 외부에서 폼 상태를 제어해야 할 때 `control` prop을 전달하지 않거나, 간단한 폼에 불필요하게 제어 모드를 사용하는 경우.
 - **어댑터와 스키마 불일치**: 스키마의 `meta.componentType`에 정의된 값을 처리하는 컴포넌트가 `UIAdapter`에 존재하지 않는 경우.
@@ -211,14 +284,14 @@ function MyAdvancedForm() {
 
 ---
 
-## 12. 버전 관리
+## 13. 버전 관리
 
 - 각 패키지는 `package.json`에서 독립적으로 버전을 관리하며, Semantic Versioning(SemVer)을 따릅니다.
 - `pnpm`의 워크스페이스 기능을 통해 버전 관리가 이루어집니다. 릴리즈는 `changesets`와 같은 도구를 활용할 수 있습니다.
 
 ---
 
-## 13. 주요 파일 및 패턴 참조
+## 14. 주요 파일 및 패턴 참조
 
 - **`<SchemaForm>` 컴포넌트**:
   - 위치: `packages/schemaform-core/src/components/SchemaForm.tsx`
@@ -233,7 +306,7 @@ function MyAdvancedForm() {
 
 ---
 
-## 14. 도메인 특화 용어
+## 15. 도메인 특화 용어
 
 - **SchemaForm**: 라이브러리 자체 또는 최상위 `<SchemaForm>` 컴포넌트.
 - **Schema (스키마)**: `zod`로 정의된 객체. 폼의 데이터 구조, 유효성 검증, UI 메타데이터를 포함하는 단일 진실 공급원.
