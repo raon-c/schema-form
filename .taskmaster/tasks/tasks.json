@@ -1,0 +1,384 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup and Configuration",
+        "description": "Initialize the project repository with TypeScript, React, and necessary build tools",
+        "details": "Create a new project using a modern build setup:\n1. Initialize with `npm init -y`\n2. Install core dependencies: React, TypeScript, Zod, react-hook-form\n3. Configure TypeScript with strict mode enabled\n4. Set up ESLint and Prettier for code quality\n5. Configure build process with rollup or vite\n6. Set up peer dependencies in package.json for react-hook-form and zod\n7. Create basic folder structure (src/, examples/, tests/)\n8. Configure Jest and React Testing Library for unit tests",
+        "testStrategy": "Verify project builds successfully and TypeScript compilation works without errors. Run a smoke test to ensure the development environment is properly set up.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Core Types and Interfaces Definition",
+        "description": "Define the core TypeScript interfaces and types that will be used throughout the library",
+        "details": "Create a types.ts file with the following definitions:\n1. `SchemaFormProps` interface for the main component props\n2. `UIAdapter` interface to define the adapter pattern\n3. `FieldProps` interface for standardized field rendering\n4. `ComponentType` enum/type for standard component types\n5. `MetaData` interface for schema metadata\n6. Type utilities for extracting schema information\n7. Types for controlled vs uncontrolled modes\n8. Types for validation modes and triggers",
+        "testStrategy": "Write unit tests to verify type compatibility and edge cases. Use TypeScript's type checking to ensure interfaces are correctly defined and used.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement SchemaForm Core Component",
+        "description": "Create the main SchemaForm component that serves as the entry point for the library",
+        "details": "Implement the SchemaForm component with the following features:\n1. Accept zod schema as a prop\n2. Accept UI adapter as a prop\n3. Accept onSubmit handler\n4. Handle form submission\n5. Implement basic rendering logic\n6. Connect with react-hook-form's useForm hook\n7. Implement proper TypeScript generics to ensure type safety\n8. Handle default values\n\nExample implementation:\n```tsx\nexport function SchemaForm<T extends z.ZodType>({ \n  schema, \n  uiAdapter, \n  onSubmit, \n  defaultValues,\n  ...props \n}: SchemaFormProps<T>) {\n  const form = useForm({\n    resolver: zodResolver(schema),\n    defaultValues,\n  });\n  \n  return (\n    <form onSubmit={form.handleSubmit(onSubmit)}>\n      {/* Field rendering logic will go here */}\n    </form>\n  );\n}\n```",
+        "testStrategy": "Write unit tests to verify the component renders correctly and integrates with react-hook-form. Test with simple schemas to ensure basic functionality works.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Schema Parsing Logic",
+        "description": "Create utility functions to parse Zod schemas and extract field information",
+        "details": "Implement schema parsing utilities:\n1. Create a function to extract field definitions from a Zod schema\n2. Handle different Zod types (string, number, boolean, etc.)\n3. Extract metadata from schema using .meta() information\n4. Map Zod types to appropriate component types\n5. Handle nested objects and arrays\n6. Extract validation rules for display\n\nExample implementation:\n```typescript\nfunction parseSchema(schema: z.ZodType): FieldDefinition[] {\n  // Extract shape for objects\n  if (schema instanceof z.ZodObject) {\n    const shape = schema._def.shape();\n    return Object.entries(shape).map(([key, fieldSchema]) => ({\n      name: key,\n      schema: fieldSchema,\n      meta: fieldSchema._def.meta || {},\n      // Map other properties\n    }));\n  }\n  // Handle other schema types\n}\n```",
+        "testStrategy": "Write comprehensive unit tests with various schema types to ensure correct parsing. Test edge cases like optional fields, unions, and nested objects.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Field Rendering Logic",
+        "description": "Create the core logic to render form fields based on parsed schema",
+        "details": "Implement the field rendering system:\n1. Create a FieldRenderer component that takes field definition and renders appropriate UI\n2. Use the UI adapter to map field types to components\n3. Pass necessary props from react-hook-form (register, control, etc.)\n4. Handle field errors and validation states\n5. Support different component types based on schema metadata\n\nExample implementation:\n```tsx\nfunction FieldRenderer({ \n  field, \n  form, \n  uiAdapter \n}: FieldRendererProps) {\n  const { name, meta } = field;\n  const componentType = meta.componentType || inferComponentType(field.schema);\n  const Component = uiAdapter[componentType];\n  \n  if (!Component) {\n    console.warn(`No component found for type: ${componentType}`);\n    return null;\n  }\n  \n  return (\n    <Component\n      name={name}\n      label={meta.label}\n      placeholder={meta.placeholder}\n      error={form.formState.errors[name]}\n      {...form.register(name)}\n    />\n  );\n}\n```",
+        "testStrategy": "Test with various field types and configurations. Verify correct props are passed to the adapter components. Test error handling and edge cases.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement UIAdapter Interface",
+        "description": "Define and implement the UIAdapter interface for component mapping",
+        "details": "Create the adapter pattern implementation:\n1. Define the UIAdapter interface with component mapping functions\n2. Create a base adapter class/type that can be extended\n3. Implement type safety for component props\n4. Define standard component types (text, password, textarea, etc.)\n5. Create utility functions for adapter creation and extension\n\nExample implementation:\n```typescript\nexport interface UIAdapter {\n  text: (props: FieldProps) => React.ReactNode;\n  password: (props: FieldProps) => React.ReactNode;\n  textarea: (props: FieldProps) => React.ReactNode;\n  number: (props: FieldProps) => React.ReactNode;\n  select: (props: SelectFieldProps) => React.ReactNode;\n  switch: (props: SwitchFieldProps) => React.ReactNode;\n  // Other component types\n}\n\nexport function createAdapter(components: Partial<UIAdapter>): UIAdapter {\n  // Implementation\n}\n```",
+        "testStrategy": "Test adapter creation and usage with mock components. Verify type safety and proper component mapping.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Default HTML UIAdapter",
+        "description": "Create a default adapter using standard HTML form elements",
+        "details": "Implement the DefaultUIAdapter:\n1. Create adapter implementation using native HTML elements\n2. Implement all required component types (text, password, textarea, etc.)\n3. Handle validation states and errors\n4. Apply basic styling with CSS variables\n5. Support all standard field props\n\nExample implementation:\n```tsx\nexport const DefaultUIAdapter: UIAdapter = {\n  text: ({ name, label, error, ...props }) => (\n    <div className=\"sf-field\">\n      {label && <label htmlFor={name}>{label}</label>}\n      <input \n        type=\"text\" \n        id={name} \n        className={error ? 'sf-input-error' : 'sf-input'} \n        {...props} \n      />\n      {error && <div className=\"sf-error\">{error.message}</div>}\n    </div>\n  ),\n  // Implement other component types\n};\n```",
+        "testStrategy": "Test each component type with various props and states. Verify error handling and styling. Test accessibility compliance.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement MUI UIAdapter",
+        "description": "Create an adapter for Material-UI components",
+        "details": "Implement the MUIAdapter:\n1. Create adapter implementation using MUI components\n2. Map standard field types to appropriate MUI components (TextField, Select, Switch, etc.)\n3. Handle validation states and errors using MUI conventions\n4. Support MUI-specific props and features\n5. Ensure proper styling and theming integration\n\nExample implementation:\n```tsx\nexport const MUIAdapter: UIAdapter = {\n  text: ({ name, label, error, ...props }) => (\n    <TextField\n      id={name}\n      name={name}\n      label={label}\n      error={!!error}\n      helperText={error?.message}\n      fullWidth\n      margin=\"normal\"\n      {...props}\n    />\n  ),\n  // Implement other component types\n};\n```",
+        "testStrategy": "Test integration with MUI components. Verify styling and theming. Test error states and validation feedback.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement Zod Schema Integration",
+        "description": "Integrate Zod schemas with react-hook-form for validation",
+        "details": "Implement Zod schema integration:\n1. Use @hookform/resolvers/zod to connect Zod schemas with react-hook-form\n2. Extract validation rules from schemas for UI feedback\n3. Handle custom validation messages\n4. Support all standard Zod validators (min, max, regex, etc.)\n5. Create utility functions for common validation patterns\n\nExample implementation:\n```tsx\nimport { zodResolver } from '@hookform/resolvers/zod';\n\nfunction useSchemaForm<T extends z.ZodType>(schema: T, options?: UseFormOptions<z.infer<T>>) {\n  return useForm({\n    resolver: zodResolver(schema),\n    ...options\n  });\n}\n```",
+        "testStrategy": "Test various validation rules and error messages. Verify integration with react-hook-form. Test custom validation scenarios.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement Schema Metadata Standard",
+        "description": "Define and implement the standard for schema metadata using Zod's meta() function",
+        "details": "Create the metadata standard:\n1. Define standard metadata properties (label, placeholder, componentType, etc.)\n2. Implement utility functions for adding metadata to schemas\n3. Create TypeScript types for metadata\n4. Document the standard format\n5. Implement extraction and usage in the rendering logic\n\nExample implementation:\n```typescript\nexport interface FieldMetadata {\n  label?: string;\n  placeholder?: string;\n  componentType?: ComponentType;\n  helperText?: string;\n  validationTrigger?: 'onChange' | 'onBlur' | 'onSubmit';\n  // Other metadata properties\n}\n\n// Helper function\nexport function withMeta<T extends z.ZodType>(schema: T, meta: FieldMetadata): T {\n  return schema.meta(meta) as T;\n}\n\n// Usage example\nconst schema = z.object({\n  name: z.string().min(2).max(50).meta({ \n    label: 'Full Name', \n    placeholder: 'Enter your full name',\n    componentType: 'text'\n  })\n});\n```",
+        "testStrategy": "Test metadata extraction and usage. Verify all standard properties work correctly. Test with various schema types.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement Standard Component Type Support",
+        "description": "Implement support for standard component types defined in the metadata",
+        "details": "Implement component type support:\n1. Define the standard component types (text, password, textarea, number, select, switch, etc.)\n2. Create mapping logic from Zod types to default component types\n3. Allow overriding via metadata\n4. Implement type inference for better developer experience\n5. Handle special cases and complex types\n\nExample implementation:\n```typescript\nexport type ComponentType = 'text' | 'password' | 'textarea' | 'number' | 'select' | 'switch' | 'checkbox' | 'radio' | 'date';\n\nfunction inferComponentType(schema: z.ZodType): ComponentType {\n  if (schema instanceof z.ZodString) {\n    return 'text';\n  } else if (schema instanceof z.ZodNumber) {\n    return 'number';\n  } else if (schema instanceof z.ZodBoolean) {\n    return 'switch';\n  } else if (schema instanceof z.ZodEnum) {\n    return 'select';\n  }\n  // Handle other cases\n  return 'text';\n}\n```",
+        "testStrategy": "Test type inference with various schema types. Verify metadata overrides work correctly. Test edge cases and complex schemas.",
+        "priority": "high",
+        "dependencies": [
+          5,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Implement Form Validation and Error Display",
+        "description": "Implement automatic validation based on schema rules and display of error messages",
+        "details": "Implement validation and error display:\n1. Connect Zod validation with react-hook-form\n2. Extract and display error messages\n3. Support different validation modes (onChange, onBlur, onSubmit)\n4. Allow field-level validation trigger customization\n5. Implement error styling and display logic\n6. Support custom error messages\n\nExample implementation:\n```tsx\nfunction FieldError({ name, errors }: { name: string, errors: FieldErrors }) {\n  const error = errors[name];\n  if (!error) return null;\n  \n  return <div className=\"sf-error-message\">{error.message}</div>;\n}\n\n// In SchemaForm component\nconst { formState: { errors }, trigger } = form;\n\n// Support for validation modes\nconst validateField = async (name: string, meta: FieldMetadata) => {\n  if (meta.validationTrigger === 'onChange') {\n    await trigger(name);\n  }\n};\n```",
+        "testStrategy": "Test validation with various rules and inputs. Verify error messages display correctly. Test different validation modes and triggers.",
+        "priority": "high",
+        "dependencies": [
+          5,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Implement Uncontrolled Form Mode",
+        "description": "Implement the default uncontrolled mode where SchemaForm manages its own state",
+        "details": "Implement uncontrolled mode:\n1. Create internal useForm instance in SchemaForm component\n2. Handle form submission and validation\n3. Expose necessary form state and methods via context or props\n4. Support defaultValues prop\n5. Implement reset functionality\n\nExample implementation:\n```tsx\nexport function SchemaForm<T extends z.ZodType>({\n  schema,\n  uiAdapter,\n  onSubmit,\n  defaultValues,\n  ...props\n}: SchemaFormProps<T>) {\n  // Internal form instance\n  const form = useForm({\n    resolver: zodResolver(schema),\n    defaultValues,\n  });\n  \n  return (\n    <form onSubmit={form.handleSubmit(onSubmit)}>\n      {/* Render fields based on schema */}\n      {renderFields(schema, form, uiAdapter)}\n      <button type=\"submit\">Submit</button>\n    </form>\n  );\n}\n```",
+        "testStrategy": "Test form submission and state management. Verify defaultValues work correctly. Test reset functionality and form lifecycle.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement Controlled Form Mode",
+        "description": "Implement controlled mode where external components can manage form state",
+        "details": "Implement controlled mode:\n1. Allow passing external form control via props\n2. Support external form state management\n3. Implement proper TypeScript typing for controlled mode\n4. Document usage patterns\n5. Handle edge cases and errors\n\nExample implementation:\n```tsx\nexport function SchemaForm<T extends z.ZodType>({\n  schema,\n  uiAdapter,\n  control, // External control object\n  ...props\n}: ControlledSchemaFormProps<T>) {\n  // Use external control instead of creating internal form\n  return (\n    <form {...props}>\n      {/* Render fields using external control */}\n      {renderFields(schema, { control }, uiAdapter)}\n    </form>\n  );\n}\n\n// Usage example\nfunction ParentComponent() {\n  const form = useForm({\n    resolver: zodResolver(schema),\n    defaultValues: { name: '' }\n  });\n  \n  return (\n    <SchemaForm \n      schema={schema} \n      uiAdapter={MUIAdapter} \n      control={form.control} \n      onSubmit={form.handleSubmit(onSubmit)} \n    />\n  );\n}\n```",
+        "testStrategy": "Test integration with external form control. Verify state management works correctly. Test with complex forms and nested components.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Implement Custom Component Support",
+        "description": "Implement support for custom components via meta.component property",
+        "details": "Implement custom component support:\n1. Allow registering custom components via meta.component\n2. Handle props passing and integration with react-hook-form\n3. Support both controlled and uncontrolled components\n4. Document the API for custom components\n5. Create examples with common third-party components\n\nExample implementation:\n```tsx\nfunction renderField(field: FieldDefinition, form: UseFormReturn, uiAdapter: UIAdapter) {\n  const { name, meta } = field;\n  \n  // Check for custom component\n  if (meta.component) {\n    const CustomComponent = meta.component;\n    return (\n      <CustomComponent\n        name={name}\n        control={form.control}\n        error={form.formState.errors[name]}\n        {...meta.componentProps}\n      />\n    );\n  }\n  \n  // Fall back to standard component rendering\n  const componentType = meta.componentType || inferComponentType(field.schema);\n  return renderStandardComponent(name, componentType, form, uiAdapter, meta);\n}\n```",
+        "testStrategy": "Test with various custom components. Verify props passing and integration. Test with third-party components like date pickers.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Implement Conditional Fields",
+        "description": "Implement support for conditional field rendering based on other field values",
+        "details": "Implement conditional fields:\n1. Add displayCondition property to field metadata\n2. Use react-hook-form's watch API to track dependencies\n3. Implement condition evaluation logic\n4. Support both simple conditions and complex functions\n5. Handle field removal/addition in validation\n\nExample implementation:\n```tsx\ninterface ConditionalFieldMetadata extends FieldMetadata {\n  displayCondition?: {\n    dependsOn: string;\n    condition: (value: any) => boolean;\n  };\n}\n\nfunction shouldDisplayField(field: FieldDefinition, formValues: Record<string, any>): boolean {\n  const { meta } = field;\n  if (!meta.displayCondition) return true;\n  \n  const { dependsOn, condition } = meta.displayCondition;\n  return condition(formValues[dependsOn]);\n}\n\n// In rendering logic\nconst watchedValues = form.watch();\nconst visibleFields = fields.filter(field => shouldDisplayField(field, watchedValues));\n```",
+        "testStrategy": "Test various conditional scenarios. Verify fields appear/disappear correctly based on conditions. Test validation with conditional fields.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          13,
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Implement Async Validation Support",
+        "description": "Implement support for asynchronous validation like API calls",
+        "details": "Implement async validation:\n1. Support async validation functions in schema metadata\n2. Integrate with react-hook-form's async validation\n3. Show loading indicators during validation\n4. Handle success/error states\n5. Support debouncing for performance\n\nExample implementation:\n```typescript\ninterface AsyncValidationMetadata extends FieldMetadata {\n  asyncValidate?: (value: any) => Promise<string | true>;\n  debounce?: number;\n}\n\n// In field registration\nregister(name, {\n  validate: async (value) => {\n    if (!meta.asyncValidate) return true;\n    \n    setValidating(true);\n    try {\n      const result = await meta.asyncValidate(value);\n      return result === true ? true : result;\n    } finally {\n      setValidating(false);\n    }\n  }\n});\n```",
+        "testStrategy": "Test async validation with mock API calls. Verify loading states and error handling. Test debouncing and concurrent validations.",
+        "priority": "medium",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Implement Field Layout Customization",
+        "description": "Implement renderFieldLayout prop for complete control over field layout",
+        "details": "Implement field layout customization:\n1. Create renderFieldLayout prop type\n2. Implement default layout renderer\n3. Allow complete override of layout\n4. Pass all necessary context to custom renderer\n5. Document usage patterns\n\nExample implementation:\n```tsx\ntype RenderFieldLayoutFn = (\n  field: FieldDefinition,\n  input: React.ReactNode,\n  meta: {\n    label?: string;\n    error?: FieldError;\n    helperText?: string;\n  }\n) => React.ReactNode;\n\nconst defaultRenderFieldLayout: RenderFieldLayoutFn = (field, input, { label, error, helperText }) => (\n  <div className=\"sf-field-container\">\n    {label && <label className=\"sf-label\">{label}</label>}\n    {input}\n    {helperText && <div className=\"sf-helper-text\">{helperText}</div>}\n    {error && <div className=\"sf-error-message\">{error.message}</div>}\n  </div>\n);\n\n// In SchemaForm component\nconst renderFieldLayout = props.renderFieldLayout || defaultRenderFieldLayout;\n```",
+        "testStrategy": "Test with custom layout renderers. Verify all necessary context is passed. Test integration with different UI adapters.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Implement CSS Variables for Theming",
+        "description": "Implement CSS custom properties for easy theming and styling",
+        "details": "Implement CSS variables:\n1. Define standard CSS variables for colors, spacing, typography, etc.\n2. Create default theme with sensible values\n3. Apply variables to all components\n4. Document override patterns\n5. Create example themes\n\nExample implementation:\n```css\n:root {\n  --sf-color-primary: #1976d2;\n  --sf-color-error: #d32f2f;\n  --sf-border-radius: 4px;\n  --sf-spacing-unit: 8px;\n  --sf-font-family: system-ui, -apple-system, sans-serif;\n  /* Other variables */\n}\n\n.sf-field-container {\n  margin-bottom: calc(var(--sf-spacing-unit) * 2);\n}\n\n.sf-label {\n  font-family: var(--sf-font-family);\n  color: var(--sf-color-text);\n  margin-bottom: var(--sf-spacing-unit);\n}\n\n.sf-error-message {\n  color: var(--sf-color-error);\n  font-size: 0.75rem;\n  margin-top: var(--sf-spacing-unit);\n}\n```",
+        "testStrategy": "Test theme overrides with different values. Verify all components respect CSS variables. Test with different browsers for compatibility.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Create Comprehensive Documentation",
+        "description": "Create detailed documentation for the library with examples and API reference",
+        "details": "Create documentation:\n1. Set up Storybook v8+ for interactive examples\n2. Document all components, props, and interfaces\n3. Create usage examples for common scenarios\n4. Document adapter creation process\n5. Create tutorials for advanced features\n6. Document theming and customization\n7. Create API reference\n\nExample structure:\n- Getting Started\n- Basic Usage\n- Schema Definition\n- UI Adapters\n- Form Validation\n- Conditional Fields\n- Custom Components\n- Theming\n- API Reference",
+        "testStrategy": "Review documentation for accuracy and completeness. Test examples to ensure they work as documented. Get feedback from potential users.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "Create Example Applications",
+        "description": "Create example applications showcasing library features and usage patterns",
+        "details": "Create examples:\n1. Simple login form example\n2. Complex multi-step form\n3. Form with conditional fields\n4. Form with custom components\n5. Form with async validation\n6. Example with custom UI adapter\n7. Example with custom theming\n\nImplement each example as a standalone application with clear documentation and comments.",
+        "testStrategy": "Test all examples to ensure they work correctly. Verify they demonstrate the intended features. Get feedback from potential users.",
+        "priority": "medium",
+        "dependencies": [
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Implement Unit and Integration Tests",
+        "description": "Create comprehensive test suite for all library features",
+        "details": "Implement tests:\n1. Unit tests for all utility functions\n2. Component tests for all React components\n3. Integration tests for form submission and validation\n4. Tests for UI adapters\n5. Tests for error handling and edge cases\n6. Performance tests\n\nUse Jest and React Testing Library for testing. Aim for high test coverage (>80%).",
+        "testStrategy": "Run tests on CI/CD pipeline. Verify all features work as expected. Test edge cases and error handling.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Implement Performance Optimizations",
+        "description": "Optimize library performance for large forms and complex schemas",
+        "details": "Implement optimizations:\n1. Memoize component rendering\n2. Optimize schema parsing\n3. Implement efficient field updates\n4. Reduce unnecessary re-renders\n5. Optimize validation performance\n6. Implement virtualization for large forms\n\nExample implementation:\n```tsx\n// Memoize field components\nconst MemoizedField = React.memo(FieldComponent);\n\n// Optimize schema parsing with caching\nconst parsedFieldsCache = new WeakMap<z.ZodType, FieldDefinition[]>();\nfunction parseSchema(schema: z.ZodType): FieldDefinition[] {\n  if (parsedFieldsCache.has(schema)) {\n    return parsedFieldsCache.get(schema)!;\n  }\n  \n  const fields = /* parsing logic */;\n  parsedFieldsCache.set(schema, fields);\n  return fields;\n}\n```",
+        "testStrategy": "Benchmark performance with large forms. Compare before and after optimization. Test with complex schemas and many fields.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Implement Bundle Size Optimization",
+        "description": "Optimize bundle size and implement tree-shaking support",
+        "details": "Implement bundle optimizations:\n1. Configure proper tree-shaking\n2. Set up proper peer dependencies\n3. Split code into modules for better tree-shaking\n4. Analyze and reduce bundle size\n5. Implement lazy loading for advanced features\n6. Document import patterns for optimal bundle size\n\nExample implementation:\n```typescript\n// Export individual modules for better tree-shaking\nexport { SchemaForm } from './SchemaForm';\nexport { DefaultUIAdapter } from './adapters/DefaultUIAdapter';\nexport { MUIAdapter } from './adapters/MUIAdapter';\nexport type { UIAdapter, FieldProps } from './types';\n\n// Lazy load advanced features\nconst AsyncValidator = React.lazy(() => import('./AsyncValidator'));\n```",
+        "testStrategy": "Analyze bundle size with tools like webpack-bundle-analyzer. Verify tree-shaking works correctly. Test import patterns.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "Prepare for Initial Release",
+        "description": "Prepare the library for initial release with proper versioning and documentation",
+        "details": "Prepare for release:\n1. Finalize package.json with proper metadata\n2. Set up semantic versioning\n3. Create README.md with installation and usage instructions\n4. Create CHANGELOG.md\n5. Set up npm publishing workflow\n6. Create release checklist\n7. Prepare announcement and marketing materials\n\nExample package.json:\n```json\n{\n  \"name\": \"schema-form\",\n  \"version\": \"0.1.0\",\n  \"description\": \"Schema-based form generation library for React\",\n  \"main\": \"dist/index.js\",\n  \"module\": \"dist/index.esm.js\",\n  \"types\": \"dist/index.d.ts\",\n  \"files\": [\"dist\"],\n  \"peerDependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\",\n    \"react-hook-form\": \"^7.0.0\",\n    \"zod\": \"^3.0.0\"\n  },\n  \"keywords\": [\"react\", \"form\", \"schema\", \"zod\", \"react-hook-form\"],\n  \"license\": \"MIT\"\n}\n```",
+        "testStrategy": "Verify package installation works correctly. Test in a clean project. Verify documentation is accurate and complete.",
+        "priority": "high",
+        "dependencies": [
+          20,
+          21,
+          22,
+          23,
+          24
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-06-24T07:12:13.472Z",
+      "updated": "2025-06-24T07:12:13.472Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

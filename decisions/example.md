@@ -190,3 +190,4 @@ graph TD;
   - For now we landed on calling the blocker function with `{ currentLocation, nextLocation, historyAction }` to align naming loosely with `shouldRevalidate`. Can always extend that API ion the future if needed (with form submission info).
 - I think since we are not providing `usePrompt`, we should accept a `beforeUnload:boolean` option to add cross-navigation handling in an opt-in fashion.
   - `beforeUnload` is also unreliable because it does not prevent the user from doing additional back/forward navigations ao this is not included out of the box and can be implemented in user-land.
+  
