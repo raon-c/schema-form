@@ -519,12 +519,6 @@ schemaform/
 │   │   │   └── index.ts      # 라이브러리 메인 진입점
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   │
-│   ├── adapter-zod/      # Zod 스키마 어댑터 패키지
-│   │   ├── src/
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   │
 │   ├── adapter-mui/      # MUI UI 어댑터 패키지
 │   │   ├── src/
 │   │   ├── package.json

@@ -149,7 +149,6 @@ pnpm lint
 |---|---|
 | `apps/docs/` | Storybook을 활용한 공식 문서 및 예제 사이트 |
 | `packages/schemaform-core/` | 핵심 `<SchemaForm>` 컴포넌트, 훅, 타입 및 렌더링 로직 포함 |
-| `packages/adapter-zod/` | `zod` 스키마를 `react-hook-form`이 이해할 수 있도록 변환하는 리졸버 |
 | `packages/adapter-mui/` | Material-UI(MUI) 컴포넌트로 폼을 렌더링하는 UI 어댑터 패키지 |
 | `packages/eslint-config/` | 모노레포 전체에서 공유하는 ESLint 설정 |
 | `packages/typescript-config/` | 공유 TypeScript(`tsconfig.json`) 설정 |
