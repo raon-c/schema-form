@@ -1,5 +1,5 @@
 import { z, ZodObject, ZodTypeAny, ZodEffects, ZodString, ZodEnum, ZodNativeEnum, ZodDate, ZodNumber, ZodBoolean } from 'zod';
-import type { FieldMetadata } from '../types';
+import type { FieldMetadata } from '../types/index.js';
 
 export interface ExtractedField {
   name: string;

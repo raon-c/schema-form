@@ -1,6 +1,7 @@
 {
   "name": "@schemaform/core",
   "version": "0.0.1",
+  "type": "module",
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -8,7 +9,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint src/ --max-warnings 0"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4"

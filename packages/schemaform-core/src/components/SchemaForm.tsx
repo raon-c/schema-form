@@ -1,21 +1,21 @@
-import * as React from 'react';
-import { useForm, Controller, FieldValues, FieldPath, Path } from 'react-hook-form';
+import { useForm, Controller, FieldValues, Path, useWatch, FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ZodObject } from 'zod';
-import type { SchemaFormProps } from '../types';
-import { extractFieldsFromSchema, getComponentType } from '../utils/schema';
+import { ZodObject, ZodTypeAny } from 'zod';
+import type { SchemaFormProps, FieldMetadata, LayoutInfo } from '../types/index.js';
+import { extractFieldsFromSchema, getComponentType } from '../utils/schema.js';
 import { 
   createSchemaWithCustomErrors, 
   getValidationModeConfig,
   createAsyncValidator 
-} from '../utils/validation';
+} from '../utils/validation.js';
+import React from 'react';
 
 export function SchemaForm<TFieldValues extends FieldValues>({ 
   schema, 
   uiAdapter, 
   onSubmit, 
   control: externalControl,
-  renderFieldLayout,
+  renderFieldLayout: formRenderFieldLayout,
   className,
   validationMode = 'onChange',
   customErrorMessages,
@@ -32,9 +32,9 @@ export function SchemaForm<TFieldValues extends FieldValues>({
 
   // Apply async validators if provided
   const finalSchema = asyncValidators
-    ? schemaWithCustomErrors.superRefine(async (data, ctx) => {
+    ? schemaWithCustomErrors.superRefine(async (data: TFieldValues, ctx: any) => {
         const errors = await createAsyncValidator(asyncValidators)(data);
-        errors.forEach(error => {
+        errors.forEach((error: { path: string[]; message: string }) => {
           ctx.addIssue({
             code: 'custom',
             path: error.path,
@@ -61,15 +61,28 @@ export function SchemaForm<TFieldValues extends FieldValues>({
 
   const control = externalControl || internalControl;
 
+  const formValues = useWatch({ control });
+
   const fields = extractFieldsFromSchema(schema as ZodObject<any, any>);
 
   const handleFormSubmit = handleSubmit(onSubmit);
 
+  const renderFieldLayout = formRenderFieldLayout || uiAdapter.renderFieldLayout;
+
   return (
     <form onSubmit={handleFormSubmit} className={className}>
-      {fields.map(({ name, zodType, metadata }) => {
+      {fields.map(({ name, zodType, metadata }: { name: Path<TFieldValues>; zodType: ZodTypeAny; metadata: FieldMetadata<TFieldValues> }) => {
+        const shouldDisplay = metadata.displayCondition ? metadata.displayCondition(formValues) : true;
+        if (!shouldDisplay) {
+          return null;
+        }
+
+        // AIDEV-NOTE: 커스텀 컴포넌트를 렌더링하는 로직.
+        // metadata에 component가 직접 제공되면 uiAdapter를 무시하고 해당 컴포넌트를 사용합니다.
+        const CustomComponent = metadata.component;
+
         const componentType = getComponentType(zodType, metadata);
-        const FieldComponent = uiAdapter[componentType];
+        const FieldComponent = CustomComponent || uiAdapter[componentType];
 
         if (!FieldComponent) {
           console.warn(`SchemaForm: No component found in UI adapter for componentType "${componentType}"`);
@@ -100,7 +113,8 @@ export function SchemaForm<TFieldValues extends FieldValues>({
         );
 
         if (renderFieldLayout) {
-          return renderFieldLayout(fieldElement, { name: name as Path<TFieldValues>, ...metadata });
+          const layoutInfo: LayoutInfo<TFieldValues> = { name: name as Path<TFieldValues>, formState, ...metadata };
+          return renderFieldLayout(fieldElement, layoutInfo);
         }
 
         return fieldElement;

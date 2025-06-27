@@ -7,6 +7,8 @@ export interface FieldMetadata<TFieldValues extends FieldValues = FieldValues> {
   label?: string;
   placeholder?: string;
   componentType?: string;
+  component?: React.ComponentType<any>;
+  displayCondition?: (formValues: TFieldValues) => boolean;
   // 필드별로 추가적인 메타데이터를 허용
   [key: string]: any;
 }
@@ -29,20 +31,29 @@ export interface FieldProps<TFieldValues extends FieldValues = FieldValues, TNam
   required?: boolean;
 }
 
+export interface LayoutInfo<TFieldValues extends FieldValues = FieldValues> extends FieldMetadata<TFieldValues> {
+  name: Path<TFieldValues>;
+  formState: UseFormStateReturn<TFieldValues>;
+}
+
 // UI 라이브러리와의 연동을 위한 어댑터 인터페이스
-export interface UIAdapter {
+export interface UIAdapter<TFieldValues extends FieldValues = FieldValues> {
   [componentType: string]: React.ComponentType<FieldProps<any>>;
+  renderFieldLayout?: (
+    fieldComponent: React.ReactNode,
+    layoutInfo: LayoutInfo<TFieldValues>
+  ) => React.ReactNode;
 }
 
 // SchemaForm 컴포넌트의 props
 export interface SchemaFormProps<TFieldValues extends FieldValues> {
   schema: ZodTypeAny;
-  uiAdapter: UIAdapter;
+  uiAdapter: UIAdapter<TFieldValues>;
   onSubmit: (data: TFieldValues) => void;
   control?: Control<TFieldValues>;
   renderFieldLayout?: (
     fieldComponent: React.ReactNode,
-    metadata: FieldMetadata<TFieldValues> & { name: Path<TFieldValues> }
+    layoutInfo: LayoutInfo<TFieldValues>
   ) => React.ReactNode;
   className?: string;
   // Validation configuration
