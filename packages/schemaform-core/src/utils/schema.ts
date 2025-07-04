@@ -1,8 +1,9 @@
-import { type ZodErrorMap, ZodObject, type ZodTypeAny } from 'zod/v4';
+import { ZodObject } from 'zod/v4';
+import type { $ZodErrorMap, $ZodType } from 'zod/v4/core';
 
 interface Field {
   path: string;
-  zodType: ZodTypeAny;
+  zodType: $ZodType;
   meta: {
     [key: string]: any;
   };
@@ -18,7 +19,7 @@ function parseMeta(description?: string) {
 }
 
 export const extractFieldsFromSchema = (
-  schema: ZodTypeAny,
+  schema: $ZodType,
   pathPrefix = ''
 ): Field[] => {
   if (schema instanceof ZodObject) {
@@ -46,7 +47,7 @@ export const extractFieldsFromSchema = (
 };
 
 export const getComponentTypeFromZodType = (
-  zodType: ZodTypeAny,
+  zodType: $ZodType,
   meta: any
 ): string => {
   if (meta?.component) {
@@ -84,7 +85,7 @@ export const getComponentTypeFromZodType = (
 };
 
 export const createErrorMap =
-  (errorMap: Record<string, string>): ZodErrorMap =>
+  (errorMap: Record<string, string>): $ZodErrorMap =>
   issue => {
     const path = issue.path?.join('.') || '';
     if (errorMap[path]) {

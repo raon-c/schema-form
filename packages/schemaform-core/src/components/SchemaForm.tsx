@@ -2,19 +2,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import type { Control, DeepPartial, FieldError } from 'react-hook-form';
 import { get, useForm } from 'react-hook-form';
-import type { ZodType, z } from 'zod/v4';
+import type { z } from 'zod/v4';
+import type { $ZodType } from 'zod/v4/core';
 import type { UIAdapter } from '../adapters/types';
 import {
   extractFieldsFromSchema,
   getComponentTypeFromZodType,
 } from '../utils/schema';
 
-export interface SchemaFormProps<T extends ZodType<any, any, any>> {
+export interface SchemaFormProps<T extends $ZodType> {
   schema: T;
   onSubmit: (data: z.output<T>) => void | Promise<void>;
   uiAdapter: UIAdapter;
   defaultValues?: DeepPartial<z.output<T>>;
-  control?: Control<z.output<T>>; // For controlled mode
+  control?: Control<
+    z.output<T> extends Record<string, any> ? z.output<T> : any
+  >; // For controlled mode
   mode?: 'onChange' | 'onBlur' | 'onSubmit' | 'onTouched' | 'all';
   renderFieldLayout?: (
     field: React.ReactNode,
@@ -24,7 +27,7 @@ export interface SchemaFormProps<T extends ZodType<any, any, any>> {
   ) => React.ReactNode;
 }
 
-export function SchemaForm<T extends ZodType<any, any, any>>({
+export function SchemaForm<T extends $ZodType>({
   schema,
   onSubmit,
   uiAdapter,
@@ -40,7 +43,7 @@ export function SchemaForm<T extends ZodType<any, any, any>>({
     errors,
     formValues,
   }: {
-    control: Control<z.output<T>>;
+    control: Control<any>;
     errors: any;
     formValues: any;
   }) => (
@@ -108,8 +111,8 @@ export function SchemaForm<T extends ZodType<any, any, any>>({
       handleSubmit,
       watch,
       formState: { errors },
-    } = useForm<z.output<T>>({
-      resolver: zodResolver(schema) as any,
+    } = useForm<any>({
+      resolver: zodResolver(schema as any) as any,
       ...(defaultValues && { defaultValues }),
       mode,
     });
@@ -118,11 +121,7 @@ export function SchemaForm<T extends ZodType<any, any, any>>({
 
     return (
       <form onSubmit={handleSubmit(onSubmit as any)}>
-        <FormFields
-          control={control as any}
-          errors={errors}
-          formValues={formValues}
-        />
+        <FormFields control={control} errors={errors} formValues={formValues} />
         <button type="submit">Submit</button>
       </form>
     );
