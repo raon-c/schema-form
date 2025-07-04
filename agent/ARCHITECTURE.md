@@ -497,7 +497,6 @@ function MyAdvancedComponent() {
 - **Zod (v4+):** 선언적인 스키마 정의와 강력한 유효성 검사를 위해 사용합니다.
 - **Vite (v5+):** `apps/docs`의 개발 서버 및 빌드 도구로 사용하여 빠른 개발 환경을 구축합니다.
 - **Vitest (v1+):** 단위 및 통합 테스트를 위한 빠르고 효율적인 테스트 러너입니다.
-- **Storybook (v8+):** 컴포넌트 및 라이브러리 사용 예시를 시각적으로 문서화하고 테스트하기 위해 사용합니다.
 - **pnpm (v9+):** 모노레포의 패키지 관리를 효율적으로 처리하기 위한 패키지 매니저입니다.
 - **Turborepo (v2+):** 모노레포의 빌드 시스템으로, 각 패키지의 빌드 및 테스트 프로세스를 효율적으로 관리하고 캐싱을 통해 CI/CD 속도를 향상시킵니다.
 
@@ -508,7 +507,7 @@ function MyAdvancedComponent() {
 ```folder
 schemaform/
 ├── apps/
-│   └── docs/             # Storybook을 활용한 공식 문서 및 예제 사이트
+│   └── docs/             # 공식 문서 및 예제 사이트
 ├── packages/
 │   ├── schemaform-core/  # 핵심 <SchemaForm> 컴포넌트 및 로직
 │   │   ├── src/

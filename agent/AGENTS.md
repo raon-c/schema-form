@@ -20,7 +20,7 @@
 
 | 번호 | AI가 *수행해도 되는* 작업 | AI가 *절대 수행하면 안 되는* 작업 |
 |---|---|---|
-| G-1 | 관련 소스 디렉토리(`packages/schemaform-core`, `packages/adapter-*`) 또는 명시적으로 지정된 파일 내에서만 코드를 생성합니다. | ❌ `apps/docs` 내의 Storybook 스토리나 테스트 관련 파일(`*.test.ts`, `*.spec.ts`)을 인간의 감독 없이 수정하거나 생성하지 않습니다. |
+| G-1 | 관련 소스 디렉토리(`packages/schemaform-core`, `packages/adapter-*`) 또는 명시적으로 지정된 파일 내에서만 코드를 생성합니다. | ❌ 테스트 관련 파일(`*.test.ts`, `*.spec.ts`)을 인간의 감독 없이 수정하거나 생성하지 않습니다. |
 | G-2 | 중요하거나 복잡한 코드 수정 시, 근처에 `AIDEV-NOTE:` 주석을 추가하거나 업데이트합니다. | ❌ 기존 `AIDEV-` 주석을 임의로 삭제하거나 핵심 내용을 변경하지 않습니다. |
 | G-3 | 프로젝트에 설정된 린팅 및 포맷팅 규칙(`eslint-config`, `typescript-config`)을 따릅니다. | ❌ 개인적인 스타일이나 다른 포맷 규칙으로 코드를 재포맷하지 않습니다. |
 | G-4 | 3개 이상의 파일을 수정하거나 300줄 이상의 코드를 변경할 경우, 먼저 계획을 제시하고 개발자의 확인을 받습니다. | ❌ 핵심 아키텍처(예: `<SchemaForm>` 컴포넌트, `UIAdapter` 인터페이스)를 인간의 가이드 없이 리팩토링하지 않습니다. |
@@ -109,7 +109,7 @@ AI 에이전트는 CLI 명령어 대신 MCP(Multi-Context Prompt) 서버를 통�
 # 전체 의존성 설치
 pnpm install
 
-# 문서/예제 사이트(Storybook) 실행
+# 전체 패키지 개발 서버 실행
 pnpm dev
 
 # 전체 패키지 빌드 (Turborepo 활용)
@@ -135,7 +135,7 @@ pnpm lint
 - **포맷팅**: Prettier + ESLint (공유 설정인 `packages/eslint-config` 참조)
 - **타이핑**: 엄격한 타입(Strict)을 지향하며, 모든 API 경계에는 명시적인 타입을 사용합니다.
 - **네이밍**: `camelCase`(함수/변수), `PascalCase`(컴포넌트/타입/인터페이스), `SCREAMING_SNAKE_CASE`(상수)
-- **문서화**: Storybook(v8+)을 사용하여 각 기능과 옵션에 대한 사용 예시와 API 문서를 명확히 제공합니다.
+- **문서화**: 각 기능과 옵션에 대한 사용 예시와 API 문서를 명확히 제공합니다.
 
 ---
 
@@ -147,7 +147,7 @@ pnpm lint
 
 | 디렉토리/패키지 | 설명 |
 |---|---|
-| `apps/docs/` | Storybook을 활용한 공식 문서 및 예제 사이트 |
+| `apps/docs/` | 공식 문서 및 예제 사이트 |
 | `packages/schemaform-core/` | 핵심 `<SchemaForm>` 컴포넌트, 훅, 타입 및 렌더링 로직 포함 |
 | `packages/adapter-mui/` | Material-UI(MUI) 컴포넌트로 폼을 렌더링하는 UI 어댑터 패키지 |
 | `packages/eslint-config/` | 모노레포 전체에서 공유하는 ESLint 설정 |
@@ -338,5 +338,5 @@ function MyAdvancedForm() {
 - **`meta`**: Zod 스키마의 `.meta()` 함수를 통해 주입되는 UI 렌더링을 위한 메타데이터 객체 (`label`, `placeholder`, `componentType` 등).
 - **`componentType`**: `meta` 객체 내의 문자열 키. `UIAdapter`가 어떤 UI 컴포넌트를 렌더링할지 결정하는 데 사용됩니다 (예: `'password'`, `'textarea'`).
 - **`renderFieldLayout`**: 필드의 전체 레이아웃(레이블, 입력, 에러 메시지 등)을 사용자가 직접 정의할 수 있도록 하는 `<SchemaForm>`의 함수형 prop.
-- **Controlled Mode (제어 모드)**: 외부에서 생성한 `react-hook-form`의 `control` 객체를 주입하여 폼의 상태를 상위 컴포넌트에서 직접 관리하는 사용 방식.
+- **Controlled Mode (제어 모드)**: 외부에서 생성한 `react-hook-form`의 `control` 객체를 `<SchemaForm>`에 `prop`으로 주입하여 폼의 상태를 상위 컴포넌트에서 직접 관리하는 사용 방식.
 - **Uncontrolled Mode (비제어 모드)**: `<SchemaForm>`이 내부적으로 `react-hook-form` 인스턴스를 생성하고 상태를 모두 관리하는 기본 사용 방식.

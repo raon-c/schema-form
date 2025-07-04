@@ -1,0 +1,93 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!**/*/.next/**",
+      "!**/*/.secret/**",
+      "!**/*/.server/**",
+      "!**/*/.turbo/**",
+      "!**/*/out/**",
+      "!**/*/.serverOutput/**",
+      "!**/node_modules/**",
+      "!**/env/**",
+      "!**/build/**",
+      "!**/dist/**",
+      "!**/graphql/generated/**",
+      "!**/public/front_end/**",
+      "!**/src/locale/ko.ts",
+      "!**/src/locale/th.ts",
+      "!**/src/locale/en.ts",
+      "!**/public/js/**/*.js",
+      "!**/*.min.js",
+      "!**/public/static/**",
+      "!**/tiara/1.1.16/**",
+      "!**/fake-api/db.json",
+      "!**/mock-db.json",
+      "!**/intersection-observer-polyfill.js",
+      "!**/.storybookOutput/**"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "useConst": "error",
+        "useTemplate": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "useHookAtTopLevel": "error"
+      },
+      "complexity": {
+        "noBannedTypes": "warn",
+        "noUselessFragments": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "asNeeded",
+      "bracketSpacing": true,
+      "bracketSameLine": false
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

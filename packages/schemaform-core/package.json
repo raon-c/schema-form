@@ -8,22 +8,33 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
-    "react-hook-form": "^7.51.3",
-    "zod": "^3.23.4"
+    "@hookform/resolvers": "5.1.1",
+    "react-hook-form": "7.59.0",
+    "zod": "3.25.67"
   },
   "devDependencies": {
-    "@types/react": "^18.3.1",
-    "eslint": "^8.57.0",
-    "react": "^18.3.1",
-    "tsup": "^8.0.2",
-    "typescript": "^5.4.5",
-    "@schemaform/eslint-config": "workspace:*",
-    "@schemaform/typescript-config": "workspace:*"
-  },
-  "peerDependencies": {
-    "react": "^18.2.0"
+    "@schemaform/typescript-config": "workspace:*",
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/jest": "30.0.0",
+    "@types/react": "19.1.8",
+    "jest": "30.0.3",
+    "jest-environment-jsdom": "30.0.2",
+    "react": "19.1.0",
+    "ts-jest": "29.4.0",
+    "tsup": "8.5.0",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
   }
 }
