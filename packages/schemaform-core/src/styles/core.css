@@ -1,0 +1,39 @@
+/* packages/schemaform-core/src/styles/core.css */
+
+:root {
+  --sf-field-spacing: 1rem;
+  --sf-label-color: #333;
+  --sf-error-color: #d32f2f;
+  --sf-input-border-color: #ccc;
+  --sf-input-error-border-color: var(--sf-error-color);
+}
+
+.sf-field-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--sf-field-spacing);
+}
+
+.sf-field-container label {
+  color: var(--sf-label-color);
+  margin-bottom: 0.25rem;
+  font-weight: bold;
+}
+
+.sf-field-container input,
+.sf-field-container textarea {
+  border: 1px solid var(--sf-input-border-color);
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.sf-field-container input.error,
+.sf-field-container textarea.error {
+  border-color: var(--sf-input-error-border-color);
+}
+
+.sf-error-message {
+  color: var(--sf-error-color);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
