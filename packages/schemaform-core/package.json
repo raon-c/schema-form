@@ -13,9 +13,7 @@
     "format": "biome format .",
     "format:fix": "biome format --write .",
     "check": "biome check .",
-    "check:fix": "biome check --write .",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "check:fix": "biome check --write ."
   },
   "peerDependencies": {
     "@emotion/react": "^11.0.0",
@@ -30,18 +28,9 @@
     "@hookform/resolvers": "5.1.1"
   },
   "devDependencies": {
-    "@mui/material": "^5.0.0",
     "@schemaform/typescript-config": "workspace:*",
-    "@testing-library/jest-dom": "6.6.3",
-    "@testing-library/react": "16.3.0",
-    "@testing-library/user-event": "14.6.1",
-    "@types/jest": "30.0.0",
     "@types/react": "19.1.8",
-    "jest": "30.0.3",
-    "jest-environment-jsdom": "30.0.2",
-    "ts-jest": "29.4.0",
     "tsup": "8.5.0",
-    "typescript": "5.8.3",
-    "vitest": "3.2.4"
+    "typescript": "5.8.3"
   }
 }

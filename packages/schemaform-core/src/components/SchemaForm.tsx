@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type React from 'react';
+import React from 'react';
 import type { Control, DeepPartial, FieldError } from 'react-hook-form';
 import { get, useForm } from 'react-hook-form';
 import type { ZodType, z } from 'zod';
@@ -48,44 +48,56 @@ export function SchemaForm<T extends ZodType<any, any>>({
       {extractFieldsFromSchema(schema).map((field: any) => {
         const { path, meta, zodType } = field;
 
-        const displayCondition = meta?.displayCondition;
-        if (displayCondition && !displayCondition(formValues)) {
-          return null;
-        }
+        return (
+          <React.Fragment key={path}>
+            {(() => {
+              const displayCondition = meta?.displayCondition;
+              if (displayCondition && !displayCondition(formValues)) {
+                return null;
+              }
 
-        const disabledCondition = meta?.disabledCondition;
-        const isDisabled =
-          !!meta?.disabled ||
-          (disabledCondition ? disabledCondition(formValues) : false);
+              const disabledCondition = meta?.disabledCondition;
+              const isDisabled =
+                !!meta?.disabled ||
+                (disabledCondition ? disabledCondition(formValues) : false);
 
-        const error = get(errors, path);
+              const error = get(errors, path);
 
-        let fieldNode: React.ReactNode;
-        const componentProps = {
-          name: path,
-          control,
-          ...meta,
-          disabled: isDisabled,
-          error,
-        };
+              let fieldNode: React.ReactNode;
+              const componentProps = {
+                name: path,
+                control,
+                ...meta,
+                disabled: isDisabled,
+                error,
+              };
 
-        if (meta?.component && uiAdapter.renderCustomComponent) {
-          fieldNode = uiAdapter.renderCustomComponent(
-            meta.component,
-            componentProps
-          );
-        } else {
-          const componentType = getComponentTypeFromZodType(zodType, meta);
-          fieldNode = uiAdapter.renderField(componentType, componentProps);
-        }
+              if (meta?.component && uiAdapter.renderCustomComponent) {
+                fieldNode = uiAdapter.renderCustomComponent(
+                  meta.component,
+                  componentProps
+                );
+              } else {
+                const componentType = getComponentTypeFromZodType(
+                  zodType,
+                  meta
+                );
+                fieldNode = uiAdapter.renderField(
+                  componentType,
+                  componentProps
+                );
+              }
 
-        const layoutRenderer =
-          formRenderFieldLayout ?? uiAdapter.renderFieldLayout;
+              const layoutRenderer =
+                formRenderFieldLayout ?? uiAdapter.renderFieldLayout;
 
-        if (layoutRenderer) {
-          return layoutRenderer(fieldNode, meta?.label, error, path);
-        }
-        return fieldNode;
+              if (layoutRenderer) {
+                return layoutRenderer(fieldNode, meta?.label, error, path);
+              }
+              return fieldNode;
+            })()}
+          </React.Fragment>
+        );
       })}
     </>
   );
