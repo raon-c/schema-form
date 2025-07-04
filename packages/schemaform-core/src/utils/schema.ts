@@ -1,11 +1,4 @@
-import {
-  defaultErrorMap,
-  type ZodErrorMap,
-  ZodIssueCode,
-  ZodObject,
-  type ZodString,
-  type ZodTypeAny,
-} from 'zod';
+import { type ZodErrorMap, ZodObject, type ZodTypeAny } from 'zod/v4';
 
 interface Field {
   path: string;
@@ -60,11 +53,21 @@ export const getComponentTypeFromZodType = (
     return meta.component;
   }
 
-  // Use _def.typeName for robust type checking in test environments
-  switch (zodType._def.typeName) {
+  // Use _zod.def.typeName for Zod v4 type checking
+  const typeName =
+    (zodType as any)._zod?.def?.typeName || (zodType as any)._def?.typeName;
+
+  switch (typeName) {
     case 'ZodString':
       if (meta?.format === 'password') return 'password';
-      if ((zodType as ZodString).isEmail) return 'email';
+      // In Zod v4, check for email format differently
+      if (
+        (zodType as any)._zod?.def?.checks?.some(
+          (check: any) => check.kind === 'email'
+        )
+      ) {
+        return 'email';
+      }
       return 'text';
     case 'ZodNumber':
       return 'number';
@@ -82,14 +85,11 @@ export const getComponentTypeFromZodType = (
 
 export const createErrorMap =
   (errorMap: Record<string, string>): ZodErrorMap =>
-  (issue, ctx) => {
-    const path = issue.path.join('.');
-    if (
-      issue.code !== ZodIssueCode.invalid_union_discriminator &&
-      errorMap[path]
-    ) {
+  issue => {
+    const path = issue.path?.join('.') || '';
+    if (errorMap[path]) {
       return { message: errorMap[path] };
     }
-    // Fallback to default error map for all other issues
-    return defaultErrorMap(issue, ctx);
+    // Return undefined to use default error message
+    return undefined;
   };
