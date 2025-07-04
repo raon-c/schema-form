@@ -1,7 +1,9 @@
 // React hooks for form functionality
 // This module contains custom hooks used by the SchemaForm library
 
-// TODO: Implement hooks
+// Re-export the main hook from core
+export { createSchemaResolver, isControlledMode, useSchemaForm } from '../core';
+
+// TODO: Implement additional hooks for advanced functionality
 // export * from './useConditionalFields';
 // export * from './useFieldMetadata';
-// export * from './useSchemaForm';

@@ -1,4 +1,4 @@
-import { ZodObject } from 'zod/v4';
+import { ZodObject, z } from 'zod/v4';
 import type { $ZodErrorMap, $ZodType } from 'zod/v4/core';
 
 interface Field {
@@ -9,13 +9,38 @@ interface Field {
   };
 }
 
-function parseMeta(description?: string) {
-  if (!description) return {};
+function extractMeta(schema: $ZodType): any {
   try {
-    return JSON.parse(description);
+    // Zod v4의 올바른 방식: .meta()를 인수 없이 호출하여 메타데이터 가져오기
+    const meta = (schema as any).meta?.();
+    if (meta && Object.keys(meta).length > 0) {
+      return meta;
+    }
   } catch (e) {
-    return { label: description };
+    // .meta() 메서드가 없거나 호출 실패 시 계속 진행
   }
+
+  // 대안: globalRegistry에서 직접 가져오기
+  try {
+    const registryMeta = z.globalRegistry.get(schema);
+    if (registryMeta && Object.keys(registryMeta).length > 0) {
+      return registryMeta;
+    }
+  } catch (e) {
+    // Registry 접근 실패 시 계속 진행
+  }
+
+  // Fallback: description을 JSON으로 파싱하기 (legacy)
+  const description = (schema as any).description;
+  if (description) {
+    try {
+      return JSON.parse(description);
+    } catch (e) {
+      return { label: description };
+    }
+  }
+
+  return {};
 }
 
 export const extractFieldsFromSchema = (
@@ -36,7 +61,7 @@ export const extractFieldsFromSchema = (
           fields.push({
             path: newPath,
             zodType: fieldSchema,
-            meta: parseMeta(fieldSchema.description),
+            meta: extractMeta(fieldSchema),
           });
         }
       }
@@ -50,8 +75,8 @@ export const getComponentTypeFromZodType = (
   zodType: $ZodType,
   meta: any
 ): string => {
-  if (meta?.component) {
-    return meta.component;
+  if (meta?.componentType) {
+    return meta.componentType;
   }
 
   // Use _zod.def.typeName for Zod v4 type checking
@@ -60,10 +85,14 @@ export const getComponentTypeFromZodType = (
 
   switch (typeName) {
     case 'ZodString':
-      if (meta?.format === 'password') return 'password';
+      if (meta?.componentType === 'password') return 'password';
+      if (meta?.componentType === 'textarea') return 'textarea';
       // In Zod v4, check for email format differently
       if (
         (zodType as any)._zod?.def?.checks?.some(
+          (check: any) => check.kind === 'email'
+        ) ||
+        (zodType as any)._def?.checks?.some(
           (check: any) => check.kind === 'email'
         )
       ) {

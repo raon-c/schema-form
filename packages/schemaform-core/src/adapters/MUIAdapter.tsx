@@ -11,7 +11,20 @@ import type { UIAdapter } from './types';
 
 export const MUIAdapter: UIAdapter = {
   renderField: (componentType, props) => {
-    const { name, control, label, error, options, ...rest } = props;
+    const {
+      name,
+      control,
+      label,
+      error,
+      options,
+      placeholder,
+      helperText,
+      disabled,
+      ...rest
+    } = props;
+
+    // Helper text priority: error message > helperText from meta
+    const displayHelperText = error?.message || helperText;
 
     switch (componentType) {
       case 'text':
@@ -24,11 +37,43 @@ export const MUIAdapter: UIAdapter = {
             control={control}
             render={({ field }) => (
               <TextField
-                type={componentType === 'password' ? 'password' : 'text'}
+                type={
+                  componentType === 'password'
+                    ? 'password'
+                    : componentType === 'email'
+                      ? 'email'
+                      : componentType === 'number'
+                        ? 'number'
+                        : 'text'
+                }
                 id={name}
                 label={label}
+                {...(placeholder && { placeholder })}
                 error={!!error}
-                helperText={error?.message}
+                helperText={displayHelperText}
+                disabled={!!disabled}
+                fullWidth
+                {...field}
+                {...rest}
+              />
+            )}
+          />
+        );
+      case 'textarea':
+        return (
+          <Controller
+            name={name}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                multiline
+                rows={4}
+                id={name}
+                label={label}
+                {...(placeholder && { placeholder })}
+                error={!!error}
+                helperText={displayHelperText}
+                disabled={!!disabled}
                 fullWidth
                 {...field}
                 {...rest}
@@ -48,16 +93,24 @@ export const MUIAdapter: UIAdapter = {
                   labelId={`${name}-label`}
                   id={name}
                   label={label}
+                  disabled={!!disabled}
                   {...field}
                   {...rest}
                 >
+                  {placeholder && (
+                    <MenuItem value="" disabled>
+                      {placeholder}
+                    </MenuItem>
+                  )}
                   {options?.map((option: { value: string; label: string }) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
                   ))}
                 </Select>
-                {error && <FormHelperText>{error.message}</FormHelperText>}
+                {displayHelperText && (
+                  <FormHelperText>{displayHelperText}</FormHelperText>
+                )}
               </FormControl>
             )}
           />
@@ -75,6 +128,28 @@ export const MUIAdapter: UIAdapter = {
                     {...rest}
                     checked={!!field.value}
                     id={name}
+                    disabled={!!disabled}
+                  />
+                }
+                label={label || ''}
+              />
+            )}
+          />
+        );
+      case 'switch':
+        return (
+          <Controller
+            name={name}
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    {...field}
+                    {...rest}
+                    checked={!!field.value}
+                    id={name}
+                    disabled={!!disabled}
                   />
                 }
                 label={label || ''}
