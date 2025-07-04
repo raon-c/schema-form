@@ -17,9 +17,9 @@ import {
 } from '../utils/errorHandling';
 
 export interface UseErrorHandlingProps {
-  errorMessages?: ErrorMessages;
-  errorDisplayOptions?: ErrorDisplayOptions;
-  onError?: (errors: FormErrorState) => void;
+  errorMessages?: ErrorMessages | undefined;
+  errorDisplayOptions?: ErrorDisplayOptions | undefined;
+  onError?: ((errors: FormErrorState) => void) | undefined;
 }
 
 export interface UseErrorHandlingReturn {

@@ -28,7 +28,7 @@ export interface FormError {
 
 export interface FieldErrorState {
   hasError: boolean;
-  error?: FieldError;
+  error?: FieldError | undefined;
   isDirty: boolean;
   isTouched: boolean;
 }

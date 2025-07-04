@@ -30,7 +30,7 @@ export function createFieldErrorState(
 ): FieldErrorState {
   return {
     hasError: !!error,
-    error: error || undefined,
+    error,
     isDirty,
     isTouched,
   };
@@ -82,55 +82,73 @@ export function getFieldErrorMessage(
 
     switch (type) {
       case 'required':
-        return typeof errorMessages.required === 'function'
-          ? errorMessages.required(fieldName)
-          : (errorMessages.required ?? error.message);
+        if (errorMessages.required) {
+          return typeof errorMessages.required === 'function'
+            ? errorMessages.required(fieldName)
+            : errorMessages.required;
+        }
+        break;
 
       case 'invalid_type':
-        return typeof errorMessages.invalid === 'function'
-          ? errorMessages.invalid(fieldName, type)
-          : (errorMessages.invalid ?? error.message);
+        if (errorMessages.invalid) {
+          return typeof errorMessages.invalid === 'function'
+            ? errorMessages.invalid(fieldName, type)
+            : errorMessages.invalid;
+        }
+        break;
 
       case 'too_small':
-        return typeof errorMessages.tooShort === 'function'
-          ? errorMessages.tooShort(fieldName, (error as any).minimum || 0)
-          : (errorMessages.tooShort ?? error.message);
+        if (errorMessages.tooShort) {
+          return typeof errorMessages.tooShort === 'function'
+            ? errorMessages.tooShort(fieldName, (error as any).minimum || 0)
+            : errorMessages.tooShort;
+        }
+        break;
 
       case 'too_big':
-        return typeof errorMessages.tooLong === 'function'
-          ? errorMessages.tooLong(fieldName, (error as any).maximum || 0)
-          : (errorMessages.tooLong ?? error.message);
+        if (errorMessages.tooLong) {
+          return typeof errorMessages.tooLong === 'function'
+            ? errorMessages.tooLong(fieldName, (error as any).maximum || 0)
+            : errorMessages.tooLong;
+        }
+        break;
 
       case 'invalid_string':
-        if ((error as any).validation === 'email') {
+        if ((error as any).validation === 'email' && errorMessages.email) {
           return typeof errorMessages.email === 'function'
             ? errorMessages.email(fieldName)
-            : (errorMessages.email ?? error.message);
+            : errorMessages.email;
         }
-        if ((error as any).validation === 'url') {
+        if ((error as any).validation === 'url' && errorMessages.url) {
           return typeof errorMessages.url === 'function'
             ? errorMessages.url(fieldName)
-            : (errorMessages.url ?? error.message);
+            : errorMessages.url;
         }
-        return typeof errorMessages.pattern === 'function'
-          ? errorMessages.pattern(fieldName)
-          : (errorMessages.pattern ?? error.message);
+        if (errorMessages.pattern) {
+          return typeof errorMessages.pattern === 'function'
+            ? errorMessages.pattern(fieldName)
+            : errorMessages.pattern;
+        }
+        break;
 
       case 'invalid_enum_value':
       case 'invalid_literal':
       case 'custom':
         if (errorMessages.custom?.[type]) {
           const customMessage = errorMessages.custom[type];
-          return typeof customMessage === 'function'
-            ? customMessage((error as any).received, fieldName)
-            : customMessage;
+          if (typeof customMessage === 'function') {
+            return customMessage((error as any).received, fieldName);
+          }
+          if (typeof customMessage === 'string') {
+            return customMessage;
+          }
         }
         break;
     }
   }
 
   // Fallback to original error message
-  return error.message;
+  return error.message || 'Validation error';
 }
 
 /**
@@ -170,7 +188,7 @@ export function hasFieldError(
  * Get all field paths with errors
  */
 export function getErrorFieldPaths(errors: FormErrorState): string[] {
-  return Object.keys(errors).filter(path => errors[path].hasError);
+  return Object.keys(errors).filter(path => errors[path]?.hasError);
 }
 
 /**
@@ -197,11 +215,15 @@ export function clearFieldError(
 export function clearAllErrors(errors: FormErrorState): FormErrorState {
   const clearedErrors: FormErrorState = {};
   for (const path in errors) {
-    clearedErrors[path] = {
-      ...errors[path],
-      hasError: false,
-      error: undefined,
-    };
+    const errorState = errors[path];
+    if (errorState) {
+      clearedErrors[path] = {
+        hasError: false,
+        error: undefined,
+        isDirty: errorState.isDirty,
+        isTouched: errorState.isTouched,
+      };
+    }
   }
   return clearedErrors;
 }
@@ -209,16 +231,22 @@ export function clearAllErrors(errors: FormErrorState): FormErrorState {
 /**
  * Default error messages in Korean
  */
-export const defaultErrorMessages: ErrorMessages = {
-  required: (fieldName: string) => `${fieldName}은(는) 필수 항목입니다.`,
-  invalid: (fieldName: string, _type: string) =>
+export const defaultErrorMessages = {
+  required: (fieldName: string): string =>
+    `${fieldName}은(는) 필수 항목입니다.`,
+  invalid: (fieldName: string, _type: string): string =>
     `${fieldName}의 형식이 올바르지 않습니다.`,
-  tooShort: (fieldName: string, min: number) =>
+  tooShort: (fieldName: string, min: number): string =>
     `${fieldName}은(는) 최소 ${min}자 이상이어야 합니다.`,
-  tooLong: (fieldName: string, max: number) =>
+  tooLong: (fieldName: string, max: number): string =>
     `${fieldName}은(는) 최대 ${max}자 이하여야 합니다.`,
-  email: (_fieldName: string) => `올바른 이메일 주소를 입력해주세요.`,
-  url: (_fieldName: string) => `올바른 URL을 입력해주세요.`,
-  number: (fieldName: string) => `${fieldName}은(는) 숫자여야 합니다.`,
-  pattern: (fieldName: string) => `${fieldName}의 형식이 올바르지 않습니다.`,
-};
+  email: (_fieldName: string): string => `올바른 이메일 주소를 입력해주세요.`,
+  url: (_fieldName: string): string => `올바른 URL을 입력해주세요.`,
+  number: (fieldName: string): string => `${fieldName}은(는) 숫자여야 합니다.`,
+  pattern: (fieldName: string): string =>
+    `${fieldName}의 형식이 올바르지 않습니다.`,
+  custom: {} as Record<
+    string,
+    string | ((value: any, fieldName: string) => string)
+  >,
+} as const satisfies ErrorMessages;

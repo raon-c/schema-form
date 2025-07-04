@@ -4,6 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import type { $ZodType } from 'zod/v4/core';
+import { useErrorHandling } from '../hooks/useErrorHandling';
 import type { FieldValues, SchemaFormConfig, SchemaFormState } from '../types';
 
 /**
@@ -26,7 +27,17 @@ export function useSchemaForm<T extends $ZodType>(
     defaultValues,
     mode = 'onSubmit',
     control: externalControl,
+    errorMessages,
+    errorDisplayOptions,
+    onError,
   } = config;
+
+  // Enhanced error handling
+  const { errors, clearFieldError, clearAllErrors } = useErrorHandling({
+    errorMessages,
+    errorDisplayOptions,
+    onError,
+  });
 
   // Always call useForm to comply with React hooks rules
   const form = useForm<FieldValues>({
@@ -46,6 +57,11 @@ export function useSchemaForm<T extends $ZodType>(
       reset: () => {},
       setValue: () => {},
       getValues: () => ({}),
+      errors,
+      clearFieldError,
+      clearAllErrors,
+      validateField: async () => Promise.resolve(true),
+      validateForm: async () => Promise.resolve(true),
     };
   }
 
@@ -59,6 +75,15 @@ export function useSchemaForm<T extends $ZodType>(
     reset: form.reset,
     setValue: form.setValue,
     getValues: form.getValues,
+    errors,
+    clearFieldError,
+    clearAllErrors,
+    validateField: async (fieldPath: string) => {
+      return form.trigger(fieldPath);
+    },
+    validateForm: async () => {
+      return form.trigger();
+    },
   };
 }
 
