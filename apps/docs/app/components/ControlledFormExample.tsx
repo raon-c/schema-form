@@ -124,7 +124,7 @@ export function ControlledFormExample() {
         <Typography variant="h6" gutterBottom>
           Real-time Values:
         </Typography>
-        <pre style={{ fontSize: '0.875rem' }}>
+        <pre style={{ fontSize: '0.875rem', margin: 0, overflow: 'auto' }}>
           {JSON.stringify(watchedValues, null, 2)}
         </pre>
       </Box>
@@ -133,7 +133,13 @@ export function ControlledFormExample() {
       {submittedData && (
         <Alert severity="success" sx={{ mt: 3 }}>
           <Typography variant="h6">Profile Submitted Successfully!</Typography>
-          <pre>{JSON.stringify(submittedData, null, 2)}</pre>
+          <Box
+            sx={{ mt: 2, p: 1, bgcolor: 'background.paper', borderRadius: 1 }}
+          >
+            <pre style={{ fontSize: '0.875rem', margin: 0, overflow: 'auto' }}>
+              {JSON.stringify(submittedData, null, 2)}
+            </pre>
+          </Box>
         </Alert>
       )}
     </Box>

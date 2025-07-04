@@ -1,6 +1,9 @@
-// Utility functions
-// This module contains helper functions and utilities used throughout the library
+// Utility functions for the SchemaForm library
+// This module contains helper functions and utilities
 
+// Export error handling utilities
+export * from './errorHandling';
+// Re-export schema utilities
 export * from './schema';
 
 // TODO: Implement additional utilities

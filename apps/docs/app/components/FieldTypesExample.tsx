@@ -135,7 +135,15 @@ export function FieldTypesExample() {
         mode="onBlur"
       />
 
-      <Box sx={{ mt: 4, p: 3, bgcolor: 'info.light', borderRadius: 1 }}>
+      <Box
+        sx={{
+          mt: 4,
+          p: 3,
+          bgcolor: 'secondary.light',
+          color: 'secondary.contrastText',
+          borderRadius: 1,
+        }}
+      >
         <Typography variant="h6" gutterBottom>
           💡 Field Type Mapping
         </Typography>

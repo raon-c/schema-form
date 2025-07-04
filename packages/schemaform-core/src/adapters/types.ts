@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Control, FieldError } from 'react-hook-form';
+import type { FieldMetadata } from '../types';
 
 export type StandardComponentType =
   | 'text'
@@ -19,6 +20,9 @@ export interface FieldProps {
   disabled?: boolean;
   required?: boolean;
   error?: FieldError;
+  helperText?: string;
+  options?: Array<{ value: string; label: string }>;
+  meta?: FieldMetadata;
   [key: string]: any;
 }
 

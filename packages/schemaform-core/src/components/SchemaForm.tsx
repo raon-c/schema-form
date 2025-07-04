@@ -5,6 +5,8 @@ import { get, useForm } from 'react-hook-form';
 import type { z } from 'zod/v4';
 import type { $ZodType } from 'zod/v4/core';
 import type { UIAdapter } from '../adapters/types';
+import { useErrorHandling } from '../hooks/useErrorHandling';
+import type { ErrorDisplayOptions, ErrorMessages } from '../types';
 import {
   extractFieldsFromSchema,
   getComponentTypeFromZodType,
@@ -25,6 +27,11 @@ export interface SchemaFormProps<T extends $ZodType> {
     error?: FieldError,
     name?: string
   ) => React.ReactNode;
+  // Enhanced error handling props
+  errorMessages?: ErrorMessages;
+  errorDisplayOptions?: ErrorDisplayOptions;
+  onError?: (errors: any) => void;
+  validateOnMount?: boolean;
 }
 
 export function SchemaForm<T extends $ZodType>({
@@ -35,17 +42,37 @@ export function SchemaForm<T extends $ZodType>({
   control: externalControl,
   mode = 'onSubmit',
   renderFieldLayout: formRenderFieldLayout,
+  errorMessages,
+  errorDisplayOptions,
+  onError,
+  validateOnMount = false,
 }: SchemaFormProps<T>) {
   const isControlled = !!externalControl;
+
+  // Enhanced error handling
+  const {
+    errors: errorState,
+    setFieldError,
+    clearFieldError,
+    shouldShowError,
+    formatErrorMessage,
+    errorCount,
+  } = useErrorHandling({
+    ...(errorMessages && { errorMessages }),
+    ...(errorDisplayOptions && { errorDisplayOptions }),
+    ...(onError && { onError }),
+  });
 
   const FormFields = ({
     control,
     errors,
     formValues,
+    isSubmitted = false,
   }: {
     control: Control<any>;
     errors: any;
     formValues: any;
+    isSubmitted?: boolean;
   }) => (
     <>
       {extractFieldsFromSchema(schema).map((field: any) => {
@@ -66,13 +93,17 @@ export function SchemaForm<T extends $ZodType>({
 
               const error = get(errors, path);
 
+              // Enhanced error handling - check if error should be shown
+              const showError =
+                error && shouldShowError(path, meta, isSubmitted);
+
               let fieldNode: React.ReactNode;
               const componentProps = {
                 name: path,
                 control,
                 ...meta,
                 disabled: isDisabled,
-                error,
+                error: showError ? error : undefined,
               };
 
               if (meta?.component && uiAdapter.renderCustomComponent) {
@@ -110,7 +141,7 @@ export function SchemaForm<T extends $ZodType>({
       control,
       handleSubmit,
       watch,
-      formState: { errors },
+      formState: { errors, isSubmitted },
     } = useForm<any>({
       resolver: zodResolver(schema as any) as any,
       ...(defaultValues && { defaultValues }),
@@ -119,10 +150,30 @@ export function SchemaForm<T extends $ZodType>({
 
     const formValues = watch();
 
+    // Enhanced error submission handling
+    const handleFormSubmit = (data: any) => {
+      try {
+        return onSubmit(data);
+      } catch (error) {
+        console.error('Form submission error:', error);
+        // Could integrate with error handling here
+      }
+    };
+
     return (
-      <form onSubmit={handleSubmit(onSubmit as any)}>
-        <FormFields control={control} errors={errors} formValues={formValues} />
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <FormFields
+          control={control}
+          errors={errors}
+          formValues={formValues}
+          isSubmitted={isSubmitted}
+        />
         <button type="submit">Submit</button>
+        {errorCount > 0 && errorDisplayOptions?.showErrorsOnSubmit && (
+          <div style={{ color: 'red', marginTop: '10px' }}>
+            총 {errorCount}개의 오류가 있습니다.
+          </div>
+        )}
       </form>
     );
   };
