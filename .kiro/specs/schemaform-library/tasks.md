@@ -45,14 +45,14 @@
     - Create debounced validation for onChange mode
     - _Requirements: 6.3, 6.4_
 
-- [ ] 5. Form State Management Enhancement
-  - [ ] 5.1 Controlled and uncontrolled mode handling
+- [x] 5. Form State Management Enhancement
+  - [x] 5.1 Controlled and uncontrolled mode handling
     - Enhance SchemaForm to properly detect and handle control prop
     - Implement proper form state initialization for both modes
     - Add defaultValues handling with external control integration
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [ ] 5.2 Form control methods implementation
+  - [x] 5.2 Form control methods implementation
     - Implement SchemaFormRef with reset, clear, and validation methods
     - Add form state access methods (getValues, setValue)
     - Create focus management and error control methods

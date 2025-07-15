@@ -232,17 +232,32 @@ export interface SchemaFormRef<T extends $ZodType = $ZodType> {
   getValues: () => z.output<T>;
   getValue: (fieldName: string) => any;
   setValue: (fieldName: string, value: any) => void;
+  setValues: (values: Partial<z.output<T>>) => void;
+
+  // Form state queries
+  isDirty: () => boolean;
+  isValid: () => boolean;
+  isSubmitting: () => boolean;
+  isFieldDirty: (fieldName: string) => boolean;
+  isFieldTouched: (fieldName: string) => boolean;
 
   // Error management
   setError: (fieldName: string, error: FieldError) => void;
   clearError: (fieldName: string) => void;
   clearAllErrors: () => void;
+  getFieldError: (fieldName: string) => FieldError | undefined;
+  hasErrors: () => boolean;
 
   // Form submission
   submit: () => void;
 
   // Focus management
   focusField: (fieldName: string) => void;
+  focusFirstErrorField: () => void;
+  
+  // Form state management
+  markFieldAsTouched: (fieldName: string) => void;
+  markAllFieldsAsTouched: () => void;
 }
 
 // Main SchemaForm component props interface
