@@ -1,16 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { forwardRef, useImperativeHandle, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 import type { Control, DeepPartial, FieldError } from 'react-hook-form';
 import { get, useForm } from 'react-hook-form';
 import type { z } from 'zod/v4';
 import type { $ZodType } from 'zod/v4/core';
 import { useErrorHandling } from '../hooks/useErrorHandling';
 import type { SchemaFormProps, SchemaFormRef } from '../types';
+import { ConditionalFieldManager } from '../utils/ConditionalFieldManager';
 import {
   extractFieldsFromSchema,
   getComponentTypeFromZodType,
 } from '../utils/schema';
-import { ConditionalFieldManager } from '../utils/ConditionalFieldManager';
 import { ConditionalField } from './ConditionalField';
 
 export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
@@ -41,17 +48,9 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
     // Enhanced error handling with ErrorManager
     const {
       errors: errorState,
-      setFieldError,
       clearFieldError,
       shouldShowError,
-      formatErrorMessage,
       errorCount,
-      setFieldTouched,
-      setFieldDirty,
-      setFieldValidating,
-      getFieldErrorState,
-      isAnyFieldValidating,
-      getErrorSummary,
     } = useErrorHandling({
       ...(errorMessages && { errorMessages }),
       ...(errorDisplayOptions && { errorDisplayOptions }),
@@ -59,8 +58,10 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
     });
 
     // Conditional field manager for handling field visibility and transitions
-    const conditionalFieldManagerRef = useRef<ConditionalFieldManager | undefined>(undefined);
-    
+    const conditionalFieldManagerRef = useRef<
+      ConditionalFieldManager | undefined
+    >(undefined);
+
     // Initialize conditional field manager
     if (!conditionalFieldManagerRef.current) {
       conditionalFieldManagerRef.current = new ConditionalFieldManager({
@@ -79,49 +80,76 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
     const conditionalFieldManager = conditionalFieldManagerRef.current;
 
     // Field state preservation utilities
-    const preserveFieldState = useCallback((fieldPath: string, formControl: any) => {
-      if (!formControl || !conditionalFieldManager) return;
-      
-      try {
-        // Get current field value and error
-        const currentValue = formControl.getValues ? formControl.getValues(fieldPath) : undefined;
-        const currentError = formControl.formState?.errors ? get(formControl.formState.errors, fieldPath) : undefined;
-        
-        // Preserve the state in conditional field manager
-        conditionalFieldManager.preserveFieldState(fieldPath, currentValue, currentError);
-      } catch (error) {
-        console.warn(`Failed to preserve state for field ${fieldPath}:`, error);
-      }
-    }, [conditionalFieldManager]);
+    const preserveFieldState = useCallback(
+      (fieldPath: string, formControl: any) => {
+        if (!formControl || !conditionalFieldManager) return;
 
-    const restoreFieldState = useCallback((fieldPath: string, formControl: any) => {
-      if (!formControl || !conditionalFieldManager || !conditionalFieldManager.hasPreservedState(fieldPath)) return;
-      
-      try {
-        // Get preserved state
-        const preservedValue = conditionalFieldManager.getPreservedValue(fieldPath);
-        const preservedError = conditionalFieldManager.getPreservedError(fieldPath);
-        
-        // Restore field value if it was preserved
-        if (preservedValue !== undefined && formControl.setValue) {
-          formControl.setValue(fieldPath, preservedValue, { 
-            shouldValidate: false, 
-            shouldDirty: true,
-            shouldTouch: false 
-          });
+        try {
+          // Get current field value and error
+          const currentValue = formControl.getValues
+            ? formControl.getValues(fieldPath)
+            : undefined;
+          const currentError = formControl.formState?.errors
+            ? get(formControl.formState.errors, fieldPath)
+            : undefined;
+
+          // Preserve the state in conditional field manager
+          conditionalFieldManager.preserveFieldState(
+            fieldPath,
+            currentValue,
+            currentError
+          );
+        } catch (error) {
+          console.warn(
+            `Failed to preserve state for field ${fieldPath}:`,
+            error
+          );
         }
-        
-        // Restore field error if it was preserved
-        if (preservedError && formControl.setError) {
-          formControl.setError(fieldPath, preservedError);
+      },
+      [conditionalFieldManager]
+    );
+
+    const restoreFieldState = useCallback(
+      (fieldPath: string, formControl: any) => {
+        if (
+          !formControl ||
+          !conditionalFieldManager ||
+          !conditionalFieldManager.hasPreservedState(fieldPath)
+        )
+          return;
+
+        try {
+          // Get preserved state
+          const preservedValue =
+            conditionalFieldManager.getPreservedValue(fieldPath);
+          const preservedError =
+            conditionalFieldManager.getPreservedError(fieldPath);
+
+          // Restore field value if it was preserved
+          if (preservedValue !== undefined && formControl.setValue) {
+            formControl.setValue(fieldPath, preservedValue, {
+              shouldValidate: false,
+              shouldDirty: true,
+              shouldTouch: false,
+            });
+          }
+
+          // Restore field error if it was preserved
+          if (preservedError && formControl.setError) {
+            formControl.setError(fieldPath, preservedError);
+          }
+
+          // Clear preserved state after restoration
+          conditionalFieldManager.clearPreservedState(fieldPath);
+        } catch (error) {
+          console.warn(
+            `Failed to restore state for field ${fieldPath}:`,
+            error
+          );
         }
-        
-        // Clear preserved state after restoration
-        conditionalFieldManager.clearPreservedState(fieldPath);
-      } catch (error) {
-        console.warn(`Failed to restore state for field ${fieldPath}:`, error);
-      }
-    }, [conditionalFieldManager]);
+      },
+      [conditionalFieldManager]
+    );
 
     // Cleanup conditional field manager on unmount
     useEffect(() => {
@@ -131,41 +159,54 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
     }, [conditionalFieldManager]);
 
     // Utility function to filter out hidden fields from form data
-    const filterHiddenFields = useCallback((data: any): any => {
-      const hiddenFieldPaths = conditionalFieldManager.getHiddenFieldPaths();
-      if (hiddenFieldPaths.length === 0) {
-        return data; // No hidden fields, return original data
-      }
+    const filterHiddenFields = useCallback(
+      (data: any): any => {
+        const hiddenFieldPaths = conditionalFieldManager.getHiddenFieldPaths();
+        if (hiddenFieldPaths.length === 0) {
+          return data; // No hidden fields, return original data
+        }
 
-      // Create a deep copy of the data to avoid mutations
-      const filteredData = JSON.parse(JSON.stringify(data));
+        // Create a deep copy of the data to avoid mutations
+        const filteredData = JSON.parse(JSON.stringify(data));
 
-      // Remove hidden field values from the data
-      hiddenFieldPaths.forEach(fieldPath => {
-        // Handle nested field paths (e.g., "user.profile.email")
-        const pathParts = fieldPath.split('.');
-        let current = filteredData;
-        
-        // Navigate to the parent object
-        for (let i = 0; i < pathParts.length - 1; i++) {
-          const pathPart = pathParts[i];
-          if (current && typeof current === 'object' && pathPart && pathPart in current) {
-            current = current[pathPart];
-          } else {
-            // Path doesn't exist, nothing to remove
-            return;
+        // Remove hidden field values from the data
+        hiddenFieldPaths.forEach(fieldPath => {
+          // Handle nested field paths (e.g., "user.profile.email")
+          const pathParts = fieldPath.split('.');
+          let current = filteredData;
+
+          // Navigate to the parent object
+          for (let i = 0; i < pathParts.length - 1; i++) {
+            const pathPart = pathParts[i];
+            if (
+              current &&
+              typeof current === 'object' &&
+              pathPart &&
+              pathPart in current
+            ) {
+              current = current[pathPart];
+            } else {
+              // Path doesn't exist, nothing to remove
+              return;
+            }
           }
-        }
-        
-        // Remove the final property
-        const finalKey = pathParts[pathParts.length - 1];
-        if (current && typeof current === 'object' && finalKey && finalKey in current) {
-          delete current[finalKey];
-        }
-      });
 
-      return filteredData;
-    }, [conditionalFieldManager]);
+          // Remove the final property
+          const finalKey = pathParts[pathParts.length - 1];
+          if (
+            current &&
+            typeof current === 'object' &&
+            finalKey &&
+            finalKey in current
+          ) {
+            delete current[finalKey];
+          }
+        });
+
+        return filteredData;
+      },
+      [conditionalFieldManager]
+    );
 
     const FormFields = ({
       control,
@@ -228,8 +269,8 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
             // Enhanced error handling - check if error should be shown
             // Don't show errors for hidden fields
             const showError =
-              error && 
-              fieldState.isVisible && 
+              error &&
+              fieldState.isVisible &&
               shouldShowError(path, meta, isSubmitted);
 
             // Create field component
@@ -248,14 +289,8 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
                 componentProps
               );
             } else {
-              const componentType = getComponentTypeFromZodType(
-                zodType,
-                meta
-              );
-              fieldNode = uiAdapter.renderField(
-                componentType,
-                componentProps
-              );
+              const componentType = getComponentTypeFromZodType(zodType, meta);
+              fieldNode = uiAdapter.renderField(componentType, componentProps);
             }
 
             // Apply layout renderer if available
@@ -327,7 +362,7 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
         if (validateOnMount) {
           trigger();
         }
-      }, [trigger]);
+      }, [trigger, validateOnMount]);
 
       // Expose enhanced form methods via ref
       useImperativeHandle(ref, () => ({
@@ -340,7 +375,7 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
           reset({});
           clearErrors();
         },
-        
+
         // Validation methods
         validate: async () => {
           const result = await trigger();
@@ -350,7 +385,7 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
           const result = await trigger(fieldName);
           return result;
         },
-        
+
         // Form state access
         getValues: () => getValues() as z.output<T>,
         getValue: (fieldName: string) => getValues(fieldName),
@@ -360,7 +395,7 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
             setValue(key, value);
           });
         },
-        
+
         // Form state queries
         isDirty: () => formState.isDirty,
         isValid: () => formState.isValid,
@@ -373,7 +408,7 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
           const fieldState = formState.touchedFields;
           return get(fieldState, fieldName) || false;
         },
-        
+
         // Error management
         setError: (fieldName: string, error: FieldError) =>
           setError(fieldName, error),
@@ -381,10 +416,10 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
         clearAllErrors: () => clearErrors(),
         getFieldError: (fieldName: string) => get(errors, fieldName),
         hasErrors: () => Object.keys(errors).length > 0,
-        
+
         // Form submission
         submit: () => handleSubmit(handleFormSubmit)(),
-        
+
         // Focus management
         focusField: (fieldName: string) => {
           const element = document.querySelector(
@@ -404,7 +439,7 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
             }
           }
         },
-        
+
         // Form state management
         markFieldAsTouched: (fieldName: string) => {
           setValue(fieldName, getValues(fieldName), { shouldTouch: true });
@@ -486,15 +521,18 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
 
     const ControlledForm = () => {
       // Get form values and errors from external control
-      const formValues = externalControl && 'watch' in externalControl 
-        ? (externalControl as any).watch() 
-        : {};
-      const formErrors = externalControl && 'formState' in externalControl 
-        ? (externalControl as any).formState.errors || {}
-        : {};
-      const isSubmitted = externalControl && 'formState' in externalControl 
-        ? (externalControl as any).formState.isSubmitted || false
-        : false;
+      const formValues =
+        externalControl && 'watch' in externalControl
+          ? (externalControl as any).watch()
+          : {};
+      const formErrors =
+        externalControl && 'formState' in externalControl
+          ? (externalControl as any).formState.errors || {}
+          : {};
+      const isSubmitted =
+        externalControl && 'formState' in externalControl
+          ? (externalControl as any).formState.isSubmitted || false
+          : false;
 
       // Enhanced ref functionality for controlled mode
       useImperativeHandle(ref, () => ({
@@ -503,33 +541,41 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
           if (externalControl && 'reset' in externalControl) {
             (externalControl as any).reset(values || defaultValues);
           } else {
-            console.warn('Reset not available - external control does not support reset');
+            console.warn(
+              'Reset not available - external control does not support reset'
+            );
           }
         },
         clear: () => {
           if (externalControl && 'reset' in externalControl) {
             (externalControl as any).reset({});
           } else {
-            console.warn('Clear not available - external control does not support reset');
+            console.warn(
+              'Clear not available - external control does not support reset'
+            );
           }
         },
-        
+
         // Validation methods
         validate: async () => {
           if (externalControl && 'trigger' in externalControl) {
             return await (externalControl as any).trigger();
           }
-          console.warn('Validate not available - external control does not support validation');
+          console.warn(
+            'Validate not available - external control does not support validation'
+          );
           return true;
         },
         validateField: async (fieldName: string) => {
           if (externalControl && 'trigger' in externalControl) {
             return await (externalControl as any).trigger(fieldName);
           }
-          console.warn('ValidateField not available - external control does not support validation');
+          console.warn(
+            'ValidateField not available - external control does not support validation'
+          );
           return true;
         },
-        
+
         // Form state access
         getValues: () => {
           if (externalControl && 'getValues' in externalControl) {
@@ -547,7 +593,9 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
           if (externalControl && 'setValue' in externalControl) {
             (externalControl as any).setValue(fieldName, value);
           } else {
-            console.warn('SetValue not available - external control does not support setValue');
+            console.warn(
+              'SetValue not available - external control does not support setValue'
+            );
           }
         },
         setValues: (values: Partial<z.output<T>>) => {
@@ -556,10 +604,12 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
               (externalControl as any).setValue(key, value);
             });
           } else {
-            console.warn('SetValues not available - external control does not support setValue');
+            console.warn(
+              'SetValues not available - external control does not support setValue'
+            );
           }
         },
-        
+
         // Form state queries
         isDirty: () => {
           if (externalControl && 'formState' in externalControl) {
@@ -593,42 +643,50 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
           }
           return false;
         },
-        
+
         // Error management
         setError: (fieldName: string, error: FieldError) => {
           if (externalControl && 'setError' in externalControl) {
             (externalControl as any).setError(fieldName, error);
           } else {
-            console.warn('SetError not available - external control does not support setError');
+            console.warn(
+              'SetError not available - external control does not support setError'
+            );
           }
         },
         clearError: (fieldName: string) => {
           if (externalControl && 'clearErrors' in externalControl) {
             (externalControl as any).clearErrors(fieldName);
           } else {
-            console.warn('ClearError not available - external control does not support clearErrors');
+            console.warn(
+              'ClearError not available - external control does not support clearErrors'
+            );
           }
         },
         clearAllErrors: () => {
           if (externalControl && 'clearErrors' in externalControl) {
             (externalControl as any).clearErrors();
           } else {
-            console.warn('ClearAllErrors not available - external control does not support clearErrors');
+            console.warn(
+              'ClearAllErrors not available - external control does not support clearErrors'
+            );
           }
         },
         getFieldError: (fieldName: string) => get(formErrors, fieldName),
         hasErrors: () => Object.keys(formErrors).length > 0,
-        
+
         // Form submission
         submit: () => {
           if (externalControl && 'handleSubmit' in externalControl) {
             const handleSubmit = (externalControl as any).handleSubmit;
             handleSubmit(onSubmit)();
           } else {
-            console.warn('Submit not available - external control does not support handleSubmit');
+            console.warn(
+              'Submit not available - external control does not support handleSubmit'
+            );
           }
         },
-        
+
         // Focus management
         focusField: (fieldName: string) => {
           const element = document.querySelector(
@@ -648,24 +706,42 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
             }
           }
         },
-        
+
         // Form state management
         markFieldAsTouched: (fieldName: string) => {
-          if (externalControl && 'setValue' in externalControl && 'getValues' in externalControl) {
+          if (
+            externalControl &&
+            'setValue' in externalControl &&
+            'getValues' in externalControl
+          ) {
             const currentValue = (externalControl as any).getValues(fieldName);
-            (externalControl as any).setValue(fieldName, currentValue, { shouldTouch: true });
+            (externalControl as any).setValue(fieldName, currentValue, {
+              shouldTouch: true,
+            });
           } else {
-            console.warn('MarkFieldAsTouched not available - external control does not support setValue/getValues');
+            console.warn(
+              'MarkFieldAsTouched not available - external control does not support setValue/getValues'
+            );
           }
         },
         markAllFieldsAsTouched: () => {
-          if (externalControl && 'setValue' in externalControl && 'getValues' in externalControl) {
+          if (
+            externalControl &&
+            'setValue' in externalControl &&
+            'getValues' in externalControl
+          ) {
             const allValues = (externalControl as any).getValues();
             Object.keys(allValues).forEach(fieldName => {
-              (externalControl as any).setValue(fieldName, allValues[fieldName], { shouldTouch: true });
+              (externalControl as any).setValue(
+                fieldName,
+                allValues[fieldName],
+                { shouldTouch: true }
+              );
             });
           } else {
-            console.warn('MarkAllFieldsAsTouched not available - external control does not support setValue/getValues');
+            console.warn(
+              'MarkAllFieldsAsTouched not available - external control does not support setValue/getValues'
+            );
           }
         },
       }));
@@ -709,9 +785,9 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
 
       const controlledFormContent = (
         <>
-          <FormFields 
-            control={externalControl!} 
-            errors={formErrors} 
+          <FormFields
+            control={externalControl!}
+            errors={formErrors}
             formValues={formValues}
             isSubmitted={isSubmitted}
           />

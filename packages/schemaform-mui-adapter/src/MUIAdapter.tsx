@@ -15,7 +15,7 @@ import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { Controller } from 'react-hook-form';
-import type { UIAdapter, FieldProps } from './types';
+import type { UIAdapter, FieldProps } from '@schemaform/core';
 
 // Props that should not be passed to DOM elements
 const DOM_EXCLUDED_PROPS = [

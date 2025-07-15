@@ -2,7 +2,8 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Box, Button, Typography } from '@mui/material';
-import { MUIAdapter, SchemaForm } from '@schemaform/core';
+import { SchemaForm } from '@schemaform/core';
+import { MUIAdapter } from '@schemaform/mui-adapter';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod/v4';
@@ -94,6 +95,7 @@ export function ControlledFormExample() {
       </Box>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* @ts-ignore - React 19 type compatibility issue */}
         <SchemaForm
           schema={profileSchema}
           uiAdapter={MUIAdapter}

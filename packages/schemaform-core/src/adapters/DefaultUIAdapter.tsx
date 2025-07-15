@@ -1,6 +1,6 @@
-import React from 'react';
+import type React from 'react';
 import { Controller } from 'react-hook-form';
-import type { UIAdapter, FieldProps } from './types';
+import type { FieldProps, UIAdapter } from './types';
 
 export const DefaultUIAdapter: UIAdapter = {
   renderField: (componentType, props) => {
@@ -26,12 +26,15 @@ export const DefaultUIAdapter: UIAdapter = {
     const getAccessibilityProps = () => {
       const errorId = error ? `${name}-error` : undefined;
       const helperId = meta?.helperText ? `${name}-helper` : undefined;
-      const describedByIds = [
-        ariaDescribedBy,
-        errorId,
-        helperId,
-        isValidating ? `${name}-loading` : undefined,
-      ].filter(Boolean).join(' ') || undefined;
+      const describedByIds =
+        [
+          ariaDescribedBy,
+          errorId,
+          helperId,
+          isValidating ? `${name}-loading` : undefined,
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined;
 
       return {
         'aria-label': ariaLabel || meta?.ariaLabel,
@@ -42,19 +45,17 @@ export const DefaultUIAdapter: UIAdapter = {
     };
 
     // Loading indicator component
-    const LoadingIndicator = () => (
+    const LoadingIndicator = () =>
       isValidating ? (
-        <span 
+        <span
           id={`${name}-loading`}
           className="sf-loading-indicator"
           aria-live="polite"
-          role="status"
         >
           <span className="sf-spinner" aria-hidden="true"></span>
           <span className="sr-only">Validating...</span>
         </span>
-      ) : null
-    );
+      ) : null;
 
     // Enhanced event handlers
     const handleFocus = (event: React.FocusEvent) => {
@@ -91,14 +92,14 @@ export const DefaultUIAdapter: UIAdapter = {
                   {...field}
                   {...getAccessibilityProps()}
                   className={`sf-input ${error ? 'sf-input--error' : ''} ${isValidating ? 'sf-input--validating' : ''}`}
-                  onFocus={(e) => {
+                  onFocus={e => {
                     handleFocus(e);
                   }}
-                  onBlur={(e) => {
+                  onBlur={e => {
                     field.onBlur();
                     handleBlur(e);
                   }}
-                  onChange={(e) => {
+                  onChange={e => {
                     field.onChange(e);
                     handleChange(e.target.value);
                   }}
@@ -125,14 +126,14 @@ export const DefaultUIAdapter: UIAdapter = {
                   {...field}
                   {...getAccessibilityProps()}
                   className={`sf-input sf-input--number ${error ? 'sf-input--error' : ''} ${isValidating ? 'sf-input--validating' : ''}`}
-                  onFocus={(e) => {
+                  onFocus={e => {
                     handleFocus(e);
                   }}
-                  onBlur={(e) => {
+                  onBlur={e => {
                     field.onBlur();
                     handleBlur(e);
                   }}
-                  onChange={(e) => {
+                  onChange={e => {
                     field.onChange(e);
                     handleChange(e.target.value);
                   }}
@@ -159,14 +160,14 @@ export const DefaultUIAdapter: UIAdapter = {
                   {...field}
                   {...getAccessibilityProps()}
                   className={`sf-textarea ${error ? 'sf-textarea--error' : ''} ${isValidating ? 'sf-textarea--validating' : ''}`}
-                  onFocus={(e) => {
+                  onFocus={e => {
                     handleFocus(e);
                   }}
-                  onBlur={(e) => {
+                  onBlur={e => {
                     field.onBlur();
                     handleBlur(e);
                   }}
-                  onChange={(e) => {
+                  onChange={e => {
                     field.onChange(e);
                     handleChange(e.target.value);
                   }}
@@ -191,14 +192,14 @@ export const DefaultUIAdapter: UIAdapter = {
                   {...field}
                   {...getAccessibilityProps()}
                   className={`sf-select ${error ? 'sf-select--error' : ''} ${isValidating ? 'sf-select--validating' : ''}`}
-                  onFocus={(e) => {
+                  onFocus={e => {
                     handleFocus(e);
                   }}
-                  onBlur={(e) => {
+                  onBlur={e => {
                     field.onBlur();
                     handleBlur(e);
                   }}
-                  onChange={(e) => {
+                  onChange={e => {
                     field.onChange(e);
                     handleChange(e.target.value);
                   }}
@@ -242,12 +243,12 @@ export const DefaultUIAdapter: UIAdapter = {
                         checked={field.value === option.value}
                         disabled={disabled || isValidating}
                         required={required && index === 0} // Only first radio needs required
-                        onChange={(e) => {
+                        onChange={e => {
                           field.onChange(option.value);
                           handleChange(option.value);
                         }}
                         onFocus={handleFocus}
-                        onBlur={(e) => {
+                        onBlur={e => {
                           field.onBlur();
                           handleBlur(e);
                         }}
@@ -270,7 +271,9 @@ export const DefaultUIAdapter: UIAdapter = {
               name={name}
               control={control}
               render={({ field }) => (
-                <label className={`sf-checkbox-label ${error ? 'sf-checkbox-label--error' : ''} ${isValidating ? 'sf-checkbox-label--validating' : ''}`}>
+                <label
+                  className={`sf-checkbox-label ${error ? 'sf-checkbox-label--error' : ''} ${isValidating ? 'sf-checkbox-label--validating' : ''}`}
+                >
                   <input
                     type="checkbox"
                     id={name}
@@ -280,20 +283,25 @@ export const DefaultUIAdapter: UIAdapter = {
                     {...getAccessibilityProps()}
                     checked={!!field.value}
                     className="sf-checkbox"
-                    onFocus={(e) => {
+                    onFocus={e => {
                       handleFocus(e);
                     }}
-                    onBlur={(e) => {
+                    onBlur={e => {
                       field.onBlur();
                       handleBlur(e);
                     }}
-                    onChange={(e) => {
+                    onChange={e => {
                       field.onChange(e.target.checked);
                       handleChange(e.target.checked);
                     }}
                   />
-                  <span className="sf-checkbox-checkmark" aria-hidden="true"></span>
-                  <span className="sf-checkbox-text">{meta?.label || rest.label}</span>
+                  <span
+                    className="sf-checkbox-checkmark"
+                    aria-hidden="true"
+                  ></span>
+                  <span className="sf-checkbox-text">
+                    {meta?.label || rest.label}
+                  </span>
                 </label>
               )}
             />
@@ -308,7 +316,9 @@ export const DefaultUIAdapter: UIAdapter = {
               name={name}
               control={control}
               render={({ field }) => (
-                <label className={`sf-switch-label ${error ? 'sf-switch-label--error' : ''} ${isValidating ? 'sf-switch-label--validating' : ''}`}>
+                <label
+                  className={`sf-switch-label ${error ? 'sf-switch-label--error' : ''} ${isValidating ? 'sf-switch-label--validating' : ''}`}
+                >
                   <input
                     type="checkbox"
                     id={name}
@@ -320,21 +330,23 @@ export const DefaultUIAdapter: UIAdapter = {
                     className="sf-switch"
                     role="switch"
                     aria-checked={!!field.value}
-                    onFocus={(e) => {
+                    onFocus={e => {
                       handleFocus(e);
                     }}
-                    onBlur={(e) => {
+                    onBlur={e => {
                       field.onBlur();
                       handleBlur(e);
                     }}
-                    onChange={(e) => {
+                    onChange={e => {
                       field.onChange(e.target.checked);
                       handleChange(e.target.checked);
                     }}
                     {...rest}
                   />
                   <span className="sf-switch-slider" aria-hidden="true"></span>
-                  <span className="sf-switch-text">{meta?.label || rest.label}</span>
+                  <span className="sf-switch-text">
+                    {meta?.label || rest.label}
+                  </span>
                 </label>
               )}
             />
@@ -357,14 +369,14 @@ export const DefaultUIAdapter: UIAdapter = {
                   {...field}
                   {...getAccessibilityProps()}
                   className={`sf-input sf-input--date ${error ? 'sf-input--error' : ''} ${isValidating ? 'sf-input--validating' : ''}`}
-                  onFocus={(e) => {
+                  onFocus={e => {
                     handleFocus(e);
                   }}
-                  onBlur={(e) => {
+                  onBlur={e => {
                     field.onBlur();
                     handleBlur(e);
                   }}
-                  onChange={(e) => {
+                  onChange={e => {
                     field.onChange(e);
                     handleChange(e.target.value);
                   }}
@@ -422,60 +434,57 @@ export const DefaultUIAdapter: UIAdapter = {
     );
   },
 
-  renderFieldLayout: ({ children, label, error, helperText, meta, errorState }) => {
+  renderFieldLayout: ({
+    children,
+    label,
+    error,
+    helperText,
+    meta,
+    errorState,
+  }) => {
     const fieldId = meta?.name || '';
     const errorId = error ? `${fieldId}-error` : undefined;
     const helperId = helperText ? `${fieldId}-helper` : undefined;
-    
+
     return (
-      <div className={`sf-field-container ${error ? 'sf-field-container--error' : ''} ${errorState?.isValidating ? 'sf-field-container--validating' : ''}`}>
+      <div
+        className={`sf-field-container ${error ? 'sf-field-container--error' : ''} ${errorState?.isValidating ? 'sf-field-container--validating' : ''}`}
+      >
         {label && (
-          <label 
+          <label
             htmlFor={fieldId}
             className={`sf-field-label ${meta?.required ? 'sf-field-label--required' : ''}`}
             id={`${fieldId}-label`}
           >
             {label}
-            {meta?.required && (
-              <span className="sf-required-indicator" aria-label="required">
-                *
-              </span>
-            )}
+            {meta?.required && <span className="sf-required-indicator">*</span>}
           </label>
         )}
-        
-        <div className="sf-field-input-container">
-          {children}
-        </div>
-        
+
+        <div className="sf-field-input-container">{children}</div>
+
         {helperText && (
-          <div 
-            id={helperId}
-            className="sf-helper-text"
-            role="note"
-          >
+          <div id={helperId} className="sf-helper-text" role="note">
             {helperText}
           </div>
         )}
-        
+
         {error && (
-          <div 
+          <div
             id={errorId}
             className="sf-error-message"
             role="alert"
             aria-live="polite"
           >
-            <span className="sf-error-icon" aria-hidden="true">⚠</span>
+            <span className="sf-error-icon" aria-hidden="true">
+              ⚠
+            </span>
             {error.message}
           </div>
         )}
-        
+
         {errorState?.isValidating && (
-          <div 
-            className="sf-validation-status"
-            aria-live="polite"
-            role="status"
-          >
+          <div className="sf-validation-status" aria-live="polite">
             <span className="sf-validation-spinner" aria-hidden="true"></span>
             <span className="sr-only">Validating field...</span>
           </div>
@@ -486,7 +495,7 @@ export const DefaultUIAdapter: UIAdapter = {
 
   renderFormContainer: (children, props) => {
     const { onSubmit, className = '', style, ...rest } = props;
-    
+
     return (
       <form
         onSubmit={onSubmit}
@@ -500,14 +509,12 @@ export const DefaultUIAdapter: UIAdapter = {
     );
   },
 
-  renderErrorMessage: (error, fieldName) => {
+  renderErrorMessage: (error, _fieldName) => {
     return (
-      <div 
-        className="sf-standalone-error"
-        role="alert"
-        aria-live="polite"
-      >
-        <span className="sf-error-icon" aria-hidden="true">⚠</span>
+      <div className="sf-standalone-error" role="alert" aria-live="polite">
+        <span className="sf-error-icon" aria-hidden="true">
+          ⚠
+        </span>
         <span className="sf-error-text">{error.message}</span>
       </div>
     );

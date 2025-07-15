@@ -38,6 +38,9 @@ importers:
       '@schemaform/core':
         specifier: workspace:*
         version: link:../../packages/schemaform-core
+      '@schemaform/mui-adapter':
+        specifier: workspace:*
+        version: link:../../packages/schemaform-mui-adapter
       next:
         specifier: ^15.3.0
         version: 15.3.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -96,6 +99,43 @@ importers:
       zod:
         specifier: ^3.25.0
         version: 3.25.67
+    devDependencies:
+      '@schemaform/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/react':
+        specifier: 19.1.8
+        version: 19.1.8
+      tsup:
+        specifier: 8.5.0
+        version: 8.5.0(postcss@8.5.6)(typescript@5.8.3)
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
+
+  packages/schemaform-mui-adapter:
+    dependencies:
+      '@emotion/react':
+        specifier: ^11.0.0
+        version: 11.14.0(@types/react@19.1.8)(react@19.1.0)
+      '@emotion/styled':
+        specifier: ^11.0.0
+        version: 11.14.1(@emotion/react@11.14.0(@types/react@19.1.8)(react@19.1.0))(@types/react@19.1.8)(react@19.1.0)
+      '@mui/material':
+        specifier: ^5.0.0
+        version: 5.17.1(@emotion/react@11.14.0(@types/react@19.1.8)(react@19.1.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.8)(react@19.1.0))(@types/react@19.1.8)(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@schemaform/core':
+        specifier: workspace:*
+        version: link:../schemaform-core
+      react:
+        specifier: ^19.0.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.1.0(react@19.1.0)
+      react-hook-form:
+        specifier: ^7.59.0
+        version: 7.59.0(react@19.1.0)
     devDependencies:
       '@schemaform/typescript-config':
         specifier: workspace:*

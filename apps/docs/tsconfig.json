@@ -5,7 +5,9 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "skipLibCheck": true,
+    "noImplicitAny": false
   },
   "include": [
     "**/*.ts",

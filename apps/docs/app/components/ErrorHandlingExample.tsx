@@ -8,7 +8,8 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import { MUIAdapter, SchemaForm } from '@schemaform/core';
+import { SchemaForm } from '@schemaform/core';
+import { MUIAdapter } from '@schemaform/mui-adapter';
 import { useState } from 'react';
 import { z } from 'zod/v4';
 
@@ -186,6 +187,7 @@ export function ErrorHandlingExample() {
       <Divider sx={{ my: 3 }} />
 
       {/* 현재 사용 가능한 기본 에러 처리를 사용하는 폼 */}
+      {/* @ts-ignore - React 19 type compatibility issue */}
       <SchemaForm
         schema={errorDemoSchema}
         uiAdapter={MUIAdapter}

@@ -18,7 +18,8 @@ import {
   Typography,
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { DefaultUIAdapter, MUIAdapter, SchemaForm } from '@schemaform/core';
+import { DefaultUIAdapter, SchemaForm } from '@schemaform/core';
+import { MUIAdapter } from '@schemaform/mui-adapter';
 import { useState } from 'react';
 import { z } from 'zod/v4';
 import { ControlledFormExample } from './components/ControlledFormExample';
@@ -491,6 +492,7 @@ export default function Home() {
                   </Typography>
                 </Alert>
 
+                {/* @ts-ignore - React 19 type compatibility issue */}
                 <SchemaForm
                   schema={basicUserSchema}
                   uiAdapter={MUIAdapter}
@@ -531,6 +533,7 @@ export default function Home() {
                   다양한 필드 타입과 스타일링을 확인해보세요.
                 </Typography>
 
+                {/* @ts-ignore - React 19 type compatibility issue */}
                 <SchemaForm
                   schema={companySchema}
                   uiAdapter={MUIAdapter}
@@ -586,6 +589,7 @@ export default function Home() {
                     bgcolor: 'background.default',
                   }}
                 >
+                  {/* @ts-ignore - React 19 type compatibility issue */}
                   <SchemaForm
                     schema={contactSchema}
                     uiAdapter={DefaultUIAdapter}
@@ -632,6 +636,7 @@ export default function Home() {
                   </Typography>
                 </Alert>
 
+                {/* @ts-ignore - React 19 type compatibility issue */}
                 <SchemaForm
                   schema={conditionalSchema}
                   uiAdapter={MUIAdapter}

@@ -79,7 +79,7 @@
     - Keep only the default HTML-based adapter in @schemaform/core
     - _Requirements: 2.3, 10.1, 10.3_
 
-  - [ ] 7.2 Separate MUI Adapter Package Setup
+  - [x] 7.2 Separate MUI Adapter Package Setup
     - Create new package structure for @schemaform/mui-adapter
     - Set up package.json with proper dependencies and peer dependencies
     - Configure build system for the MUI adapter package

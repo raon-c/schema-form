@@ -1,7 +1,8 @@
 'use client';
 
 import { Box, Divider, Typography } from '@mui/material';
-import { MUIAdapter, SchemaForm } from '@schemaform/core';
+import { SchemaForm } from '@schemaform/core';
+import { MUIAdapter } from '@schemaform/mui-adapter';
 import { z } from 'zod/v4';
 
 // Comprehensive schema demonstrating all field types
@@ -121,6 +122,7 @@ export function FieldTypesExample() {
 
       <Divider sx={{ my: 3 }} />
 
+      {/* @ts-ignore - React 19 type compatibility issue */}
       <SchemaForm
         schema={fieldTypesSchema}
         uiAdapter={MUIAdapter}

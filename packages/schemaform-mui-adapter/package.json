@@ -1,10 +1,21 @@
 {
-  "name": "@schemaform/core",
+  "name": "@schemaform/mui-adapter",
   "version": "0.0.1",
   "private": true,
+  "description": "Material-UI adapter for SchemaForm library",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
@@ -13,16 +24,26 @@
     "format": "biome format .",
     "format:fix": "biome format --write .",
     "check": "biome check .",
-    "check:fix": "biome check --write ."
+    "check:fix": "biome check --write .",
+    "check-types": "tsc --noEmit"
   },
+  "keywords": [
+    "react",
+    "form",
+    "schema",
+    "zod",
+    "material-ui",
+    "mui",
+    "typescript"
+  ],
   "peerDependencies": {
+    "@emotion/react": "^11.0.0",
+    "@emotion/styled": "^11.0.0",
+    "@mui/material": "^5.0.0",
+    "@schemaform/core": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.59.0",
-    "zod": "^3.25.0"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "5.1.1"
+    "react-hook-form": "^7.59.0"
   },
   "devDependencies": {
     "@schemaform/typescript-config": "workspace:*",
