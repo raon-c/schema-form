@@ -9,6 +9,12 @@ export type {
 } from './useErrorHandling';
 // Export error handling hook
 export { useErrorHandling } from './useErrorHandling';
+// Export async validation hook
+export type {
+  UseAsyncValidationProps,
+  UseAsyncValidationReturn,
+} from './useAsyncValidation';
+export { useAsyncValidation } from './useAsyncValidation';
 
 // TODO: Implement additional hooks for advanced functionality
 // export * from './useConditionalFields';

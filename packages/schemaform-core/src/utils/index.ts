@@ -3,6 +3,12 @@
 
 // Export ErrorManager class
 export * from './ErrorManager';
+// Export AccessibilityManager class
+export * from './AccessibilityManager';
+// Export AsyncValidationManager class
+export * from './AsyncValidationManager';
+// Export ValidationCacheManager class
+export * from './ValidationCacheManager';
 // Export error handling utilities
 export * from './errorHandling';
 // Re-export schema utilities

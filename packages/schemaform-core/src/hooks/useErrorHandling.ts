@@ -5,8 +5,10 @@ import type {
   ErrorMessages,
   FieldMetadata,
   FormErrorState,
+  ValidationResult,
 } from '../types';
 import { ErrorManager } from '../utils/ErrorManager';
+import { useAsyncValidation } from './useAsyncValidation';
 
 export interface UseErrorHandlingProps {
   errorMessages?: ErrorMessages | undefined;
@@ -78,6 +80,20 @@ export interface UseErrorHandlingReturn {
   associateErrorWithField: (fieldPath: string, errorId: string) => void;
   generateErrorId: (fieldPath: string) => string;
   setupKeyboardNavigation: (formElement: HTMLElement) => void;
+  // Async validation methods
+  validateFieldAsync: (
+    fieldPath: string,
+    validationFn: () => Promise<boolean | FieldError | null>,
+    options?: {
+      debounceMs?: number;
+      cacheKey?: string;
+      abortPrevious?: boolean;
+    }
+  ) => Promise<ValidationResult>;
+  isFieldValidatingAsync: (fieldPath: string) => boolean;
+  cancelFieldValidation: (fieldPath: string) => Promise<void>;
+  cancelAllValidations: () => Promise<void>;
+  getAsyncValidationResult: (fieldPath: string) => ValidationResult | undefined;
 }
 
 export function useErrorHandling({
@@ -104,6 +120,30 @@ export function useErrorHandling({
   }
 
   const errorManager = errorManagerRef.current;
+
+  // Initialize async validation hook
+  const {
+    validateField: validateFieldAsync,
+    isFieldValidating: isFieldValidatingAsync,
+    cancelFieldValidation,
+    cancelAllValidations,
+    getValidationResult: getAsyncValidationResult,
+  } = useAsyncValidation({
+    onValidationStateChange: (state) => {
+      // Update error manager with validation states
+      for (const fieldPath of state.validatingFields) {
+        errorManager.setFieldValidating(fieldPath, true);
+      }
+      
+      // Clear validation state for fields no longer validating
+      const currentValidatingFields = errorManager.getValidatingFieldPaths();
+      for (const fieldPath of currentValidatingFields) {
+        if (!state.validatingFields.has(fieldPath)) {
+          errorManager.setFieldValidating(fieldPath, false);
+        }
+      }
+    },
+  });
 
   // Update ErrorManager when props change
   useMemo(() => {
@@ -310,5 +350,11 @@ export function useErrorHandling({
     associateErrorWithField,
     generateErrorId,
     setupKeyboardNavigation,
+    // Async validation methods
+    validateFieldAsync,
+    isFieldValidatingAsync,
+    cancelFieldValidation,
+    cancelAllValidations,
+    getAsyncValidationResult,
   };
 }

@@ -123,6 +123,18 @@ export {
 } from '../utils/AccessibilityManager';
 export { createErrorManager, ErrorManager } from '../utils/ErrorManager';
 export {
+  AsyncValidationManager,
+  createAsyncValidationManager,
+  getAsyncValidationManager,
+  cleanupGlobalAsyncValidationManager,
+} from '../utils/AsyncValidationManager';
+export {
+  ValidationCacheManager,
+  createValidationCacheManager,
+  getValidationCacheManager,
+  cleanupGlobalValidationCacheManager,
+} from '../utils/ValidationCacheManager';
+export {
   createErrorMap,
   extractFieldsFromSchema,
   getComponentTypeFromZodType,
