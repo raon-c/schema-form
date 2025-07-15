@@ -70,3 +70,421 @@
 .sf-conditional-field--exited {
   display: none;
 }
+
+/* Enhanced DefaultUIAdapter Styles */
+
+/* Form container */
+.sf-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-field-spacing);
+}
+
+/* Field container enhancements */
+.sf-field-container {
+  position: relative;
+}
+
+.sf-field-container--error {
+  --sf-input-border-color: var(--sf-error-color);
+}
+
+.sf-field-container--validating {
+  opacity: 0.8;
+}
+
+/* Field labels */
+.sf-field-label {
+  display: block;
+  color: var(--sf-label-color);
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.sf-field-label--required {
+  font-weight: 600;
+}
+
+.sf-required-indicator {
+  color: var(--sf-error-color);
+  margin-left: 0.25rem;
+  font-weight: bold;
+}
+
+/* Input field container */
+.sf-field-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Base input styles */
+.sf-input,
+.sf-textarea,
+.sf-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--sf-input-border-color);
+  border-radius: 4px;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: border-color var(--sf-transition-duration) var(--sf-transition-easing),
+              box-shadow var(--sf-transition-duration) var(--sf-transition-easing);
+  background-color: #fff;
+}
+
+.sf-input:focus,
+.sf-textarea:focus,
+.sf-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.sf-input--error,
+.sf-textarea--error,
+.sf-select--error {
+  border-color: var(--sf-error-color);
+}
+
+.sf-input--error:focus,
+.sf-textarea--error:focus,
+.sf-select--error:focus {
+  border-color: var(--sf-error-color);
+  box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.25);
+}
+
+.sf-input--validating,
+.sf-textarea--validating,
+.sf-select--validating {
+  background-image: linear-gradient(45deg, transparent 25%, rgba(0, 0, 0, 0.05) 25%, rgba(0, 0, 0, 0.05) 50%, transparent 50%);
+  background-size: 20px 20px;
+  animation: sf-validating-stripe 1s linear infinite;
+}
+
+@keyframes sf-validating-stripe {
+  0% { background-position: 0 0; }
+  100% { background-position: 20px 0; }
+}
+
+/* Textarea specific */
+.sf-textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+/* Select specific */
+.sf-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* Radio group */
+.sf-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sf-radio-group--error {
+  border: 1px solid var(--sf-error-color);
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.sf-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color var(--sf-transition-duration) var(--sf-transition-easing);
+}
+
+.sf-radio-option:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sf-radio-option input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.sf-radio-label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Checkbox */
+.sf-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color var(--sf-transition-duration) var(--sf-transition-easing);
+}
+
+.sf-checkbox-label:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sf-checkbox-label--error {
+  color: var(--sf-error-color);
+}
+
+.sf-checkbox {
+  position: relative;
+  margin: 0;
+  cursor: pointer;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.sf-checkbox-checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--sf-input-border-color);
+  border-radius: 4px;
+  background-color: #fff;
+  transition: all var(--sf-transition-duration) var(--sf-transition-easing);
+}
+
+.sf-checkbox:checked + .sf-checkbox-checkmark {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.sf-checkbox:checked + .sf-checkbox-checkmark::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.sf-checkbox-text {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Switch */
+.sf-switch-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color var(--sf-transition-duration) var(--sf-transition-easing);
+}
+
+.sf-switch-label:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sf-switch-label--error {
+  color: var(--sf-error-color);
+}
+
+.sf-switch {
+  position: relative;
+  width: 3rem;
+  height: 1.5rem;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sf-switch-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 1.5rem;
+  transition: background-color var(--sf-transition-duration) var(--sf-transition-easing);
+  cursor: pointer;
+}
+
+.sf-switch-slider::before {
+  content: '';
+  position: absolute;
+  height: 1.25rem;
+  width: 1.25rem;
+  left: 0.125rem;
+  bottom: 0.125rem;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform var(--sf-transition-duration) var(--sf-transition-easing);
+}
+
+.sf-switch:checked + .sf-switch-slider {
+  background-color: #007bff;
+}
+
+.sf-switch:checked + .sf-switch-slider::before {
+  transform: translateX(1.5rem);
+}
+
+.sf-switch-text {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Loading indicators */
+.sf-loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.sf-spinner,
+.sf-validation-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: sf-spin 1s linear infinite;
+}
+
+@keyframes sf-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Helper text */
+.sf-helper-text {
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+/* Error messages */
+.sf-error-message,
+.sf-standalone-error {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--sf-error-color);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.sf-error-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Validation status */
+.sf-validation-status {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Disabled states */
+.sf-input:disabled,
+.sf-textarea:disabled,
+.sf-select:disabled,
+.sf-checkbox:disabled,
+.sf-switch:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sf-checkbox-label:has(.sf-checkbox:disabled),
+.sf-switch-label:has(.sf-switch:disabled),
+.sf-radio-option:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Focus visible for better keyboard navigation */
+.sf-input:focus-visible,
+.sf-textarea:focus-visible,
+.sf-select:focus-visible,
+.sf-checkbox:focus-visible,
+.sf-switch:focus-visible,
+.sf-radio-option input:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .sf-input,
+  .sf-textarea,
+  .sf-select {
+    border-width: 2px;
+  }
+  
+  .sf-checkbox-checkmark,
+  .sf-switch-slider {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sf-input,
+  .sf-textarea,
+  .sf-select,
+  .sf-checkbox-checkmark,
+  .sf-switch-slider,
+  .sf-radio-option,
+  .sf-checkbox-label,
+  .sf-switch-label {
+    transition: none;
+  }
+  
+  .sf-spinner,
+  .sf-validation-spinner {
+    animation: none;
+  }
+  
+  .sf-input--validating,
+  .sf-textarea--validating,
+  .sf-select--validating {
+    animation: none;
+    background-image: none;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}

@@ -1,13 +1,21 @@
+import React from 'react';
 import Checkbox from '@mui/material/Checkbox';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
+import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
 import Select from '@mui/material/Select';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import { Controller } from 'react-hook-form';
-import type { UIAdapter } from './types';
+import type { UIAdapter, FieldProps } from './types';
 
 // Props that should not be passed to DOM elements
 const DOM_EXCLUDED_PROPS = [
@@ -19,6 +27,12 @@ const DOM_EXCLUDED_PROPS = [
   'clearErrorOnFocus',
   'errorMessage',
   'meta',
+  'isValidating',
+  'ariaLabel',
+  'ariaDescribedBy',
+  'onFocus',
+  'onBlur',
+  'onChange',
 ];
 
 // Filter out custom props that shouldn't be passed to DOM elements
@@ -41,18 +55,61 @@ export const MUIAdapter: UIAdapter = {
       placeholder,
       helperText,
       disabled,
+      required,
+      isValidating,
+      ariaLabel,
+      ariaDescribedBy,
       meta,
+      onFocus,
+      onBlur,
+      onChange,
       ...rest
     } = props;
 
     // Filter out DOM-incompatible props
     const domProps = filterDOMProps(rest);
 
-    // Simple error message handling
+    // Enhanced error message handling
     const displayHelperText = error ? error.message : helperText;
 
     // Error styling
     const hasError = !!error;
+
+    // Enhanced accessibility attributes
+    const getAccessibilityProps = () => {
+      const describedBy = ariaDescribedBy || meta?.ariaDescribedBy;
+      return {
+        'aria-label': ariaLabel || meta?.ariaLabel,
+        ...(describedBy && { 'aria-describedby': describedBy }),
+        'aria-required': required ? true : undefined,
+      };
+    };
+
+    // Loading indicator for async validation
+    const LoadingAdornment = () => (
+      isValidating ? (
+        <InputAdornment position="end">
+          <CircularProgress size={20} />
+        </InputAdornment>
+      ) : null
+    );
+
+    // Enhanced event handlers
+    const handleFocus = (event: React.FocusEvent) => {
+      onFocus?.(event);
+      // Clear error on focus if specified in meta
+      if (meta?.clearErrorOnFocus && hasError) {
+        // This would be handled by the form's error management
+      }
+    };
+
+    const handleBlur = (event: React.FocusEvent) => {
+      onBlur?.(event);
+    };
+
+    const handleChange = (value: any) => {
+      onChange?.(value);
+    };
 
     switch (componentType) {
       case 'text':
@@ -85,25 +142,29 @@ export const MUIAdapter: UIAdapter = {
                 }
                 id={name}
                 label={label}
-                {...(placeholder && { placeholder })}
+                placeholder={placeholder || ''}
                 error={hasError || fieldState.invalid}
                 helperText={displayHelperText || fieldState.error?.message}
-                disabled={!!disabled}
+                disabled={!!(disabled || isValidating)}
+                required={!!required}
                 fullWidth
                 {...field}
-                {...domProps}
-                // Enhanced error handling props
-                onFocus={e => {
-                  // Clear error on focus if specified in meta
-                  if (meta?.clearErrorOnFocus && hasError) {
-                    // This would be handled by the form's error management
-                  }
-                  domProps.onFocus?.(e);
+                {...getAccessibilityProps()}
+                InputProps={{
+                  endAdornment: <LoadingAdornment />,
                 }}
-                onBlur={e => {
+                onFocus={(e) => {
+                  handleFocus(e);
+                }}
+                onBlur={(e) => {
                   field.onBlur();
-                  domProps.onBlur?.(e);
+                  handleBlur(e);
                 }}
+                onChange={(e) => {
+                  field.onChange(e);
+                  handleChange(e.target.value);
+                }}
+                {...domProps}
               />
             )}
           />
@@ -120,12 +181,28 @@ export const MUIAdapter: UIAdapter = {
                 rows={4}
                 id={name}
                 label={label}
-                {...(placeholder && { placeholder })}
+                placeholder={placeholder || ''}
                 error={hasError || fieldState.invalid}
                 helperText={displayHelperText || fieldState.error?.message}
-                disabled={!!disabled}
+                disabled={!!(disabled || isValidating)}
+                required={!!required}
                 fullWidth
                 {...field}
+                {...getAccessibilityProps()}
+                InputProps={{
+                  endAdornment: <LoadingAdornment />,
+                }}
+                onFocus={(e) => {
+                  handleFocus(e);
+                }}
+                onBlur={(e) => {
+                  field.onBlur();
+                  handleBlur(e);
+                }}
+                onChange={(e) => {
+                  field.onChange(e);
+                  handleChange(e.target.value);
+                }}
                 {...domProps}
               />
             )}
@@ -144,8 +221,26 @@ export const MUIAdapter: UIAdapter = {
                   labelId={`${name}-label`}
                   id={name}
                   label={label}
-                  disabled={!!disabled}
+                  disabled={!!(disabled || isValidating)}
+                  required={!!required}
                   {...field}
+                  {...getAccessibilityProps()}
+                  endAdornment={isValidating ? (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} />
+                    </InputAdornment>
+                  ) : undefined}
+                  onFocus={(e) => {
+                    handleFocus(e);
+                  }}
+                  onBlur={(e) => {
+                    field.onBlur();
+                    handleBlur(e);
+                  }}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    handleChange(e.target.value);
+                  }}
                   {...domProps}
                 >
                   {placeholder && (
@@ -164,6 +259,14 @@ export const MUIAdapter: UIAdapter = {
                     {displayHelperText || fieldState.error?.message}
                   </FormHelperText>
                 )}
+                {isValidating && (
+                  <FormHelperText>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <CircularProgress size={16} />
+                      <Typography variant="caption">Validating...</Typography>
+                    </Box>
+                  </FormHelperText>
+                )}
               </FormControl>
             )}
           />
@@ -176,18 +279,34 @@ export const MUIAdapter: UIAdapter = {
             control={control}
             render={({ field, fieldState }) => (
               <FormControl error={hasError || fieldState.invalid}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      {...field}
-                      {...domProps}
-                      checked={!!field.value}
-                      id={name}
-                      disabled={!!disabled}
-                    />
-                  }
-                  label={label || ''}
-                />
+                <Box display="flex" alignItems="center" gap={1}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        {...field}
+                        {...getAccessibilityProps()}
+                        checked={!!field.value}
+                        id={name}
+                        disabled={!!(disabled || isValidating)}
+                        required={!!required}
+                        onFocus={(e) => {
+                          handleFocus(e);
+                        }}
+                        onBlur={(e) => {
+                          field.onBlur();
+                          handleBlur(e);
+                        }}
+                        onChange={(e) => {
+                          field.onChange(e.target.checked);
+                          handleChange(e.target.checked);
+                        }}
+                        {...domProps}
+                      />
+                    }
+                    label={label || ''}
+                  />
+                  {isValidating && <CircularProgress size={20} />}
+                </Box>
                 {(displayHelperText || fieldState.error?.message) && (
                   <FormHelperText>
                     {displayHelperText || fieldState.error?.message}
@@ -205,18 +324,34 @@ export const MUIAdapter: UIAdapter = {
             control={control}
             render={({ field, fieldState }) => (
               <FormControl error={hasError || fieldState.invalid}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      {...field}
-                      {...domProps}
-                      checked={!!field.value}
-                      id={name}
-                      disabled={!!disabled}
-                    />
-                  }
-                  label={label || ''}
-                />
+                <Box display="flex" alignItems="center" gap={1}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        {...field}
+                        {...getAccessibilityProps()}
+                        checked={!!field.value}
+                        id={name}
+                        disabled={!!(disabled || isValidating)}
+                        required={!!required}
+                        onFocus={(e) => {
+                          handleFocus(e);
+                        }}
+                        onBlur={(e) => {
+                          field.onBlur();
+                          handleBlur(e);
+                        }}
+                        onChange={(e) => {
+                          field.onChange(e.target.checked);
+                          handleChange(e.target.checked);
+                        }}
+                        {...domProps}
+                      />
+                    }
+                    label={label || ''}
+                  />
+                  {isValidating && <CircularProgress size={20} />}
+                </Box>
                 {(displayHelperText || fieldState.error?.message) && (
                   <FormHelperText>
                     {displayHelperText || fieldState.error?.message}
@@ -234,32 +369,56 @@ export const MUIAdapter: UIAdapter = {
             control={control}
             render={({ field, fieldState }) => (
               <FormControl error={hasError || fieldState.invalid}>
-                <div role="radiogroup" aria-labelledby={`${name}-label`}>
+                <Box>
                   {label && (
-                    <div
+                    <Typography
+                      component="legend"
                       id={`${name}-label`}
-                      style={{ marginBottom: 8, fontWeight: 500 }}
+                      variant="body2"
+                      sx={{ marginBottom: 1, fontWeight: 500 }}
                     >
                       {label}
-                    </div>
+                      {required && <span style={{ color: 'red' }}> *</span>}
+                    </Typography>
                   )}
-                  {options?.map((option: { value: string; label: string }) => (
-                    <FormControlLabel
-                      key={option.value}
-                      control={
-                        <input
-                          type="radio"
-                          value={option.value}
-                          checked={field.value === option.value}
-                          onChange={() => field.onChange(option.value)}
-                          disabled={!!disabled}
-                          {...domProps}
-                        />
-                      }
-                      label={option.label}
-                    />
-                  ))}
-                </div>
+                  <RadioGroup
+                    {...field}
+                    {...getAccessibilityProps()}
+                    aria-labelledby={`${name}-label`}
+                    name={name}
+                    onFocus={(e) => {
+                      handleFocus(e);
+                    }}
+                    onBlur={(e) => {
+                      field.onBlur();
+                      handleBlur(e);
+                    }}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      handleChange(e.target.value);
+                    }}
+                  >
+                    {options?.map((option: { value: string; label: string }) => (
+                      <FormControlLabel
+                        key={option.value}
+                        value={option.value}
+                        control={
+                          <Radio
+                            disabled={!!(disabled || isValidating)}
+                            required={!!required}
+                          />
+                        }
+                        label={option.label}
+                      />
+                    ))}
+                  </RadioGroup>
+                  {isValidating && (
+                    <Box display="flex" alignItems="center" gap={1} mt={1}>
+                      <CircularProgress size={16} />
+                      <Typography variant="caption">Validating...</Typography>
+                    </Box>
+                  )}
+                </Box>
                 {(displayHelperText || fieldState.error?.message) && (
                   <FormHelperText>
                     {displayHelperText || fieldState.error?.message}
@@ -282,13 +441,29 @@ export const MUIAdapter: UIAdapter = {
                 label={label}
                 error={hasError || fieldState.invalid}
                 helperText={displayHelperText || fieldState.error?.message}
-                disabled={!!disabled}
+                disabled={!!(disabled || isValidating)}
+                required={!!required}
                 fullWidth
                 {...field}
-                {...domProps}
+                {...getAccessibilityProps()}
+                InputProps={{
+                  endAdornment: <LoadingAdornment />,
+                }}
                 InputLabelProps={{
                   shrink: true,
                 }}
+                onFocus={(e) => {
+                  handleFocus(e);
+                }}
+                onBlur={(e) => {
+                  field.onBlur();
+                  handleBlur(e);
+                }}
+                onChange={(e) => {
+                  field.onChange(e);
+                  handleChange(e.target.value);
+                }}
+                {...domProps}
               />
             )}
           />
@@ -365,6 +540,66 @@ export const MUIAdapter: UIAdapter = {
         control={control}
         render={({ field }) => <Component {...field} {...domProps} />}
       />
+    );
+  },
+
+  renderFieldLayout: ({ children, label, error, helperText, meta, errorState }) => {
+    const fieldId = meta?.name || '';
+    const hasError = !!error;
+    const isValidating = errorState?.isValidating || false;
+    
+    return (
+      <Box sx={{ marginBottom: 2 }}>
+        {children}
+        {/* Additional validation status for complex fields */}
+        {isValidating && !error && (
+          <FormHelperText>
+            <Box display="flex" alignItems="center" gap={1}>
+              <CircularProgress size={16} />
+              <Typography variant="caption" color="text.secondary">
+                Validating field...
+              </Typography>
+            </Box>
+          </FormHelperText>
+        )}
+      </Box>
+    );
+  },
+
+  renderFormContainer: (children, props) => {
+    const { onSubmit, className = '', style, ...rest } = props;
+    
+    return (
+      <Box
+        component="form"
+        onSubmit={onSubmit}
+        className={className}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+        style={style}
+        noValidate // We handle validation ourselves
+        {...rest}
+      >
+        {children}
+      </Box>
+    );
+  },
+
+  renderErrorMessage: (error, fieldName) => {
+    return (
+      <FormHelperText error>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="caption" component="span" sx={{ fontSize: '1rem' }}>
+            ⚠
+          </Typography>
+          <Typography variant="body2" component="span">
+            {error.message}
+          </Typography>
+        </Box>
+      </FormHelperText>
     );
   },
 };
