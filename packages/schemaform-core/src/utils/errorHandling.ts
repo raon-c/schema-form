@@ -26,13 +26,15 @@ export function convertZodErrorToFormError(zodError: z.ZodError): FormError[] {
 export function createFieldErrorState(
   error?: FieldError,
   isDirty = false,
-  isTouched = false
+  isTouched = false,
+  isValidating = false
 ): FieldErrorState {
   return {
     hasError: !!error,
     error,
     isDirty,
     isTouched,
+    isValidating,
   };
 }
 
@@ -72,7 +74,7 @@ export function getFieldErrorMessage(
   // Check field-specific error message
   if (meta.errorMessage) {
     return typeof meta.errorMessage === 'function'
-      ? meta.errorMessage(error, fieldName)
+      ? meta.errorMessage(error)
       : meta.errorMessage;
   }
 
@@ -222,6 +224,7 @@ export function clearAllErrors(errors: FormErrorState): FormErrorState {
         error: undefined,
         isDirty: errorState.isDirty,
         isTouched: errorState.isTouched,
+        isValidating: errorState.isValidating,
       };
     }
   }

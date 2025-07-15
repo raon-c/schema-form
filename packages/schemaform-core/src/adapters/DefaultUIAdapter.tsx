@@ -73,11 +73,12 @@ export const DefaultUIAdapter: UIAdapter = {
     );
   },
 
-  renderFieldLayout: (field, label, error, name) => {
+  renderFieldLayout: ({ children, label, error, helperText, meta }) => {
     return (
       <div className="sf-field-container">
-        {label && <label htmlFor={name}>{label}</label>}
-        {field}
+        {label && <label htmlFor={meta?.name || ''}>{label}</label>}
+        {children}
+        {helperText && <div className="sf-helper-text">{helperText}</div>}
         {error && <div className="sf-error-message">{error.message}</div>}
       </div>
     );

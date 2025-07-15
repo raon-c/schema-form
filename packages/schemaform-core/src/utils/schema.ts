@@ -1,125 +1,409 @@
-import { ZodObject, z } from 'zod/v4';
-import type { $ZodErrorMap, $ZodType } from 'zod/v4/core';
+import {
+  ZodArray,
+  ZodDefault,
+  ZodNullable,
+  ZodObject,
+  ZodOptional,
+  z,
+} from 'zod/v4';
+import type { $ZodType } from 'zod/v4/core';
+import type { FieldMetadata, FormField, StandardComponentType } from '../types';
 
-interface Field {
-  path: string;
-  zodType: $ZodType;
-  meta: {
-    [key: string]: any;
-  };
-}
+/**
+ * Enhanced metadata extraction from Zod schema with proper Zod v4 support
+ */
+function extractMetadata(schema: $ZodType): FieldMetadata {
+  let extractedMeta: any = {};
 
-function extractMeta(schema: $ZodType): any {
   try {
-    // Zod v4의 올바른 방식: .meta()를 인수 없이 호출하여 메타데이터 가져오기
-    const meta = (schema as any).meta?.();
-    if (meta && Object.keys(meta).length > 0) {
-      return meta;
+    // Primary method: Try to get metadata from .meta() method
+    if (typeof (schema as any).meta === 'function') {
+      const meta = (schema as any).meta();
+      if (meta && typeof meta === 'object' && Object.keys(meta).length > 0) {
+        extractedMeta = { ...meta };
+      }
     }
   } catch (e) {
-    // .meta() 메서드가 없거나 호출 실패 시 계속 진행
+    // Continue if meta() method fails
   }
 
-  // 대안: globalRegistry에서 직접 가져오기
   try {
-    const registryMeta = z.globalRegistry.get(schema);
-    if (registryMeta && Object.keys(registryMeta).length > 0) {
-      return registryMeta;
+    // Alternative: Check for metadata in _def
+    const def = (schema as any)._def;
+    if (def?.meta && typeof def.meta === 'object') {
+      extractedMeta = { ...extractedMeta, ...def.meta };
     }
   } catch (e) {
-    // Registry 접근 실패 시 계속 진행
+    // Continue if _def access fails
   }
 
-  // Fallback: description을 JSON으로 파싱하기 (legacy)
+  try {
+    // Fallback: Try global registry (if available)
+    const registryMeta = z.globalRegistry?.get?.(schema);
+    if (
+      registryMeta &&
+      typeof registryMeta === 'object' &&
+      Object.keys(registryMeta).length > 0
+    ) {
+      extractedMeta = { ...extractedMeta, ...registryMeta };
+    }
+  } catch (e) {
+    // Continue if registry access fails
+  }
+
+  // Legacy fallback: Parse description as JSON or use as label
   const description = (schema as any).description;
-  if (description) {
+  if (description && typeof description === 'string') {
     try {
-      return JSON.parse(description);
+      const parsedDescription = JSON.parse(description);
+      if (typeof parsedDescription === 'object') {
+        extractedMeta = { ...extractedMeta, ...parsedDescription };
+      }
     } catch (e) {
-      return { label: description };
+      // If not JSON, use as label
+      if (!extractedMeta.label) {
+        extractedMeta.label = description;
+      }
     }
   }
 
-  return {};
+  // Ensure we have at least a label
+  if (!extractedMeta.label && typeof extractedMeta.label !== 'string') {
+    extractedMeta.label = '';
+  }
+
+  return extractedMeta as FieldMetadata;
 }
 
-export const extractFieldsFromSchema = (
+/**
+ * Check if a Zod type is optional
+ */
+function isOptionalField(zodType: $ZodType): boolean {
+  // Check for ZodOptional wrapper
+  if (zodType instanceof ZodOptional) {
+    return true;
+  }
+
+  // Check for ZodNullable (which can be considered optional)
+  if (zodType instanceof ZodNullable) {
+    return true;
+  }
+
+  // Check _def for optional flag
+  const def = (zodType as any)._def;
+  if (def && def.typeName === 'ZodOptional') {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Extract default value from Zod schema
+ */
+function extractDefaultValue(zodType: $ZodType): any {
+  // Check for ZodDefault wrapper
+  if (zodType instanceof ZodDefault) {
+    try {
+      return (zodType._def.defaultValue as () => any)();
+    } catch (e) {
+      return undefined;
+    }
+  }
+
+  // Check _def for default value
+  const def = (zodType as any)._def;
+  if (
+    def &&
+    def.typeName === 'ZodDefault' &&
+    typeof def.defaultValue === 'function'
+  ) {
+    try {
+      return def.defaultValue();
+    } catch (e) {
+      return undefined;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Unwrap nested Zod types (Optional, Nullable, Default) to get the inner type
+ */
+function unwrapZodType(zodType: $ZodType): $ZodType {
+  let currentType = zodType;
+
+  // Keep unwrapping until we get to the core type
+  while (true) {
+    if (currentType instanceof ZodOptional) {
+      currentType = currentType._def.innerType;
+    } else if (currentType instanceof ZodNullable) {
+      currentType = currentType._def.innerType;
+    } else if (currentType instanceof ZodDefault) {
+      currentType = currentType._def.innerType;
+    } else {
+      break;
+    }
+  }
+
+  return currentType;
+}
+
+/**
+ * Enhanced field extraction with support for nested objects, arrays, and proper metadata
+ */
+export function extractFieldsFromSchema(
   schema: $ZodType,
   pathPrefix = ''
-): Field[] => {
-  if (schema instanceof ZodObject) {
-    const shape = schema.shape;
-    let fields: Field[] = [];
+): FormField[] {
+  const fields: FormField[] = [];
+
+  // Unwrap the schema to get the core type
+  const unwrappedSchema = unwrapZodType(schema);
+
+  if (unwrappedSchema instanceof ZodObject) {
+    const shape = unwrappedSchema.shape;
+
     for (const key in shape) {
       if (Object.hasOwn(shape, key)) {
-        const newPath = pathPrefix ? `${pathPrefix}.${key}` : key;
         const fieldSchema = shape[key];
+        const fieldPath = pathPrefix ? `${pathPrefix}.${key}` : key;
 
-        if (fieldSchema instanceof ZodObject) {
-          fields = fields.concat(extractFieldsFromSchema(fieldSchema, newPath));
-        } else {
+        // Extract field information
+        const isOptional = isOptionalField(fieldSchema);
+        const defaultValue = extractDefaultValue(fieldSchema);
+        const metadata = extractMetadata(fieldSchema);
+
+        // Unwrap the field schema to check its core type
+        const unwrappedFieldSchema = unwrapZodType(fieldSchema);
+
+        // Handle nested objects recursively
+        if (unwrappedFieldSchema instanceof ZodObject) {
+          const nestedFields = extractFieldsFromSchema(fieldSchema, fieldPath);
+          fields.push(...nestedFields);
+        }
+        // Handle arrays
+        else if (unwrappedFieldSchema instanceof ZodArray) {
+          // For now, treat arrays as simple fields
+          // TODO: Implement nested array field extraction
           fields.push({
-            path: newPath,
+            path: fieldPath,
             zodType: fieldSchema,
-            meta: extractMeta(fieldSchema),
+            meta: {
+              ...metadata,
+              isArray: true,
+            },
+            isOptional,
+            defaultValue,
+          });
+        }
+        // Regular field
+        else {
+          fields.push({
+            path: fieldPath,
+            zodType: fieldSchema,
+            meta: metadata,
+            isOptional,
+            defaultValue,
           });
         }
       }
     }
-    return fields;
   }
-  return [];
-};
 
-export const getComponentTypeFromZodType = (
+  return fields;
+}
+
+/**
+ * Enhanced component type resolution with support for all standard types
+ */
+export function getComponentTypeFromZodType(
   zodType: $ZodType,
-  meta: any
-): string => {
+  meta?: FieldMetadata
+): StandardComponentType | string {
+  // Check meta for explicit component type first
   if (meta?.componentType) {
     return meta.componentType;
   }
 
-  // Use _zod.def.typeName for Zod v4 type checking
-  const typeName =
-    (zodType as any)._zod?.def?.typeName || (zodType as any)._def?.typeName;
+  // Unwrap the type to get the core type
+  const unwrappedType = unwrapZodType(zodType);
+
+  // Get the type name from Zod's internal structure
+  const typeName = (unwrappedType as any)._def?.typeName;
 
   switch (typeName) {
-    case 'ZodString':
+    case 'ZodString': {
+      const def = (unwrappedType as any)._def;
+
+      // Check for specific string validations
+      if (def.checks) {
+        for (const check of def.checks) {
+          switch (check.kind) {
+            case 'email':
+              return 'email';
+            case 'url':
+              return 'url';
+            case 'regex':
+              // Could be phone, etc. based on pattern
+              if (check.regex?.toString().includes('tel')) {
+                return 'tel';
+              }
+              break;
+          }
+        }
+      }
+
+      // Check meta for specific string types
       if (meta?.componentType === 'password') return 'password';
       if (meta?.componentType === 'textarea') return 'textarea';
-      // In Zod v4, check for email format differently
-      if (
-        (zodType as any)._zod?.def?.checks?.some(
-          (check: any) => check.kind === 'email'
-        ) ||
-        (zodType as any)._def?.checks?.some(
-          (check: any) => check.kind === 'email'
-        )
-      ) {
-        return 'email';
-      }
+      if (meta?.componentType === 'search') return 'search';
+
       return 'text';
+    }
+
     case 'ZodNumber':
+    case 'ZodBigInt':
       return 'number';
+
     case 'ZodBoolean':
-      return 'checkbox';
+      // Check meta to determine if it should be a switch or checkbox
+      return meta?.componentType === 'switch' ? 'switch' : 'checkbox';
+
     case 'ZodEnum':
-    case 'ZodNativeEnum':
+    case 'ZodNativeEnum': {
+      // Check if it should be radio buttons based on meta or number of options
+      const enumValues = (unwrappedType as any)._def.values;
+      if (
+        meta?.componentType === 'radio' ||
+        (Array.isArray(enumValues) && enumValues.length <= 4)
+      ) {
+        return 'radio';
+      }
       return 'select';
+    }
+
     case 'ZodDate':
       return 'date';
+
+    case 'ZodArray':
+      // For arrays, we typically want a multi-select or custom array component
+      return meta?.componentType || 'select'; // Could be enhanced with multi-select
+
+    case 'ZodUnion':
+    case 'ZodDiscriminatedUnion':
+      // For unions, typically use select
+      return 'select';
+
     default:
+      // Fallback to text for unknown types
       return 'text';
   }
-};
+}
 
-export const createErrorMap =
-  (errorMap: Record<string, string>): $ZodErrorMap =>
-  issue => {
+/**
+ * Extract options for select/radio components from enum schemas
+ */
+export function extractOptionsFromSchema(
+  zodType: $ZodType
+): Array<{ value: string; label: string }> | undefined {
+  const unwrappedType = unwrapZodType(zodType);
+  const typeName = (unwrappedType as any)._def?.typeName;
+
+  if (typeName === 'ZodEnum' || typeName === 'ZodNativeEnum') {
+    const values = (unwrappedType as any)._def.values;
+
+    if (Array.isArray(values)) {
+      return values.map(value => ({
+        value: String(value),
+        label: String(value), // Could be enhanced with custom labels from meta
+      }));
+    }
+
+    if (typeof values === 'object') {
+      return Object.entries(values).map(([key, value]) => ({
+        value: String(value),
+        label: key,
+      }));
+    }
+  }
+
+  if (typeName === 'ZodUnion') {
+    const options = (unwrappedType as any)._def.options;
+    if (Array.isArray(options)) {
+      return options
+        .filter((option: any) => option._def?.typeName === 'ZodLiteral')
+        .map((option: any) => ({
+          value: String(option._def.value),
+          label: String(option._def.value),
+        }));
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Create enhanced error map with field-specific messages
+ */
+export function createErrorMap(errorMap: Record<string, string>) {
+  return (issue: any) => {
     const path = issue.path?.join('.') || '';
+
+    // Check for field-specific error message
     if (errorMap[path]) {
       return { message: errorMap[path] };
     }
+
+    // Check for type-specific error messages
+    const typeKey = `${path}.${issue.code}`;
+    if (errorMap[typeKey]) {
+      return { message: errorMap[typeKey] };
+    }
+
     // Return undefined to use default error message
     return undefined;
   };
+}
+
+/**
+ * Validate if a schema field supports the given component type
+ */
+export function isValidComponentType(
+  zodType: $ZodType,
+  componentType: string
+): boolean {
+  const defaultType = getComponentTypeFromZodType(zodType);
+
+  // Allow exact matches
+  if (defaultType === componentType) {
+    return true;
+  }
+
+  const unwrappedType = unwrapZodType(zodType);
+  const typeName = (unwrappedType as any)._def?.typeName;
+
+  // Allow compatible component types
+  switch (typeName) {
+    case 'ZodString':
+      return [
+        'text',
+        'password',
+        'textarea',
+        'email',
+        'url',
+        'tel',
+        'search',
+      ].includes(componentType);
+    case 'ZodNumber':
+      return ['number', 'text'].includes(componentType);
+    case 'ZodBoolean':
+      return ['checkbox', 'switch'].includes(componentType);
+    case 'ZodEnum':
+    case 'ZodNativeEnum':
+      return ['select', 'radio'].includes(componentType);
+    default:
+      return false;
+  }
+}
