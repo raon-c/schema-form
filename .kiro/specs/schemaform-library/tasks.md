@@ -71,97 +71,128 @@
     - Restore field state when fields become visible again
     - _Requirements: 8.3, 8.4_
 
-- [x] 7. UI Adapter System Enhancements
-  - [x] 7.1 Enhanced DefaultUIAdapter
+- [x] 7. Core UI Adapter System
+  - [x] 7.1 Enhanced DefaultUIAdapter in Core Package
     - Improve DefaultUIAdapter with proper accessibility attributes
     - Add support for all standard component types
     - Implement proper error display and loading states
+    - Keep only the default HTML-based adapter in @schemaform/core
     - _Requirements: 2.3, 10.1, 10.3_
 
-  - [x] 7.2 Enhanced MUIAdapter
+  - [ ] 7.2 Separate MUI Adapter Package Setup
+    - Create new package structure for @schemaform/mui-adapter
+    - Set up package.json with proper dependencies and peer dependencies
+    - Configure build system for the MUI adapter package
+    - Export MUIAdapter as the main export from the package
+    - _Requirements: 2.1, Package Architecture_
+
+  - [ ] 7.3 Enhanced MUIAdapter Implementation
+    - Move MUIAdapter from core to separate @schemaform/mui-adapter package
     - Update MUIAdapter with new FieldProps interface
     - Add support for async validation loading states
     - Implement proper accessibility attributes for MUI components
     - Add support for custom component rendering
     - _Requirements: 2.1, 3.5, 6.1, 10.1_
 
-- [ ] 8. Field Layout Customization System
-  - [ ] 8.1 RenderFieldLayout implementation
+- [ ] 8. Additional UI Adapter Packages
+  - [ ] 8.1 Ant Design Adapter Package
+    - Create @schemaform/antd-adapter package structure
+    - Implement AntdAdapter with Ant Design components
+    - Add proper TypeScript definitions and exports
+    - Configure build system and peer dependencies
+    - _Requirements: 2.1, Package Architecture_
+
+  - [ ] 8.2 Chakra UI Adapter Package
+    - Create @schemaform/chakra-adapter package structure
+    - Implement ChakraAdapter with Chakra UI components
+    - Add proper TypeScript definitions and exports
+    - Configure build system and peer dependencies
+    - _Requirements: 2.1, Package Architecture_
+
+  - [ ] 8.3 Adapter Package Documentation
+    - Create installation and usage guides for each adapter package
+    - Document adapter-specific features and customizations
+    - Provide migration guides from core MUI adapter
+    - Create examples for each adapter package
+    - _Requirements: 12.1, 12.2_
+
+- [ ] 9. Field Layout Customization System
+  - [ ] 9.1 RenderFieldLayout implementation
     - Create comprehensive RenderFieldLayoutProps interface
     - Implement default field layout with proper accessibility
     - Add support for custom layout functions via renderFieldLayout prop
     - _Requirements: 7.1, 7.3, 10.1, 10.4_
 
-  - [ ] 8.2 CSS theming system
+  - [ ] 9.2 CSS theming system
     - Define standard CSS custom properties for theming
     - Implement fallback values for browser compatibility
     - Create theme documentation and examples
     - _Requirements: 7.2_
 
-- [ ] 9. Performance Optimization
-  - [ ] 9.1 Component memoization
+- [ ] 10. Performance Optimization
+  - [ ] 10.1 Component memoization
     - Implement React.memo for field components to prevent unnecessary re-renders
     - Add useMemo for expensive schema processing operations
     - Optimize field rendering loop with proper dependency arrays
     - _Requirements: Performance optimization_
 
-  - [ ] 9.2 Memory management
+  - [ ] 10.2 Memory management
     - Implement FormCleanupManager for proper resource cleanup
     - Add cleanup for validation timeouts and async operations
     - Create proper component unmounting cleanup
     - _Requirements: Performance optimization, 6.4_
 
-- [ ] 10. Comprehensive Testing Suite
-  - [ ] 10.1 Unit tests for core functionality
+- [ ] 11. Comprehensive Testing Suite
+  - [ ] 11.1 Unit tests for core functionality
     - Write tests for schema processing and field extraction
     - Test error handling logic and display conditions
     - Create tests for async validation state management
     - Test accessibility manager functionality
     - _Requirements: 1.1, 1.2, 3.1, 5.1, 5.2, 6.1, 6.2, 10.1, 10.2_
 
-  - [ ] 10.2 Integration tests for form behavior
+  - [ ] 11.2 Integration tests for form behavior
     - Test complete form submission workflows
     - Test controlled and uncontrolled mode switching
     - Test conditional field rendering and state management
     - Test UI adapter integration with different component types
     - _Requirements: 1.4, 4.4, 8.1-8.4, 2.2_
 
-  - [ ] 10.3 Accessibility testing
+  - [ ] 11.3 Accessibility testing
     - Test keyboard navigation and focus management
     - Test screen reader announcements for errors
     - Test ARIA attributes and associations
     - Test form accessibility with different UI adapters
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-- [ ] 11. Documentation and Examples
-  - [ ] 11.1 API documentation
+- [ ] 12. Documentation and Examples
+  - [ ] 12.1 API documentation
     - Create comprehensive API reference for all interfaces
     - Document all SchemaForm props and their usage
     - Create UIAdapter development guide
     - Document accessibility features and best practices
     - _Requirements: 12.1, 12.4_
 
-  - [ ] 11.2 Usage examples and tutorials
+  - [ ] 12.2 Usage examples and tutorials
     - Create basic usage examples for common scenarios
     - Build advanced examples with conditional fields and async validation
     - Create custom UI adapter examples
     - Build accessibility-focused examples
     - _Requirements: 12.2, 12.3_
 
-- [ ] 12. Integration and Polish
-  - [ ] 12.1 Final integration testing
+- [ ] 13. Integration and Polish
+  - [ ] 13.1 Final integration testing
     - Test library integration with different React versions
     - Test TypeScript integration and type inference
     - Verify all requirements are met through comprehensive testing
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-  - [ ] 12.2 Performance benchmarking
+  - [ ] 13.2 Performance benchmarking
     - Benchmark form rendering performance with large schemas
     - Test memory usage and cleanup effectiveness
     - Optimize any performance bottlenecks discovered
     - _Requirements: Performance optimization_
 
-  - [ ] 12.3 Final documentation review
+  - [ ] 13.3 Final documentation review
     - Review all documentation for completeness and accuracy
     - Create troubleshooting guide with common issues
     - Finalize API documentation with all examples

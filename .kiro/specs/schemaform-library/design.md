@@ -2,9 +2,18 @@
 
 ## Overview
 
-SchemaForm is a React form library that automatically generates forms from Zod schemas using an adapter pattern architecture. The library leverages react-hook-form as its core engine for state management and validation, while providing a flexible UI adapter system that allows developers to use different UI libraries (MUI, Ant Design, etc.) or create custom components.
+SchemaForm is a React form library that automatically generates forms from Zod schemas using an adapter pattern architecture. The library leverages react-hook-form as its core engine for state management and validation, while providing a flexible UI adapter system that allows developers to use different UI libraries through separate adapter packages.
 
-The design follows a clear separation of concerns: Zod schemas define data structure and validation rules, react-hook-form manages form state and performance, UI adapters handle rendering, and SchemaForm orchestrates the entire process.
+The design follows a clear separation of concerns: Zod schemas define data structure and validation rules, react-hook-form manages form state and performance, UI adapters handle rendering (distributed as separate packages), and SchemaForm orchestrates the entire process.
+
+### Package Architecture
+
+- **`@schemaform/core`**: Core library with default HTML-based adapter
+- **`@schemaform/mui-adapter`**: Material-UI adapter package
+- **`@schemaform/antd-adapter`**: Ant Design adapter package (future)
+- **`@schemaform/chakra-adapter`**: Chakra UI adapter package (future)
+
+This modular approach allows developers to install only the adapters they need, reducing bundle size and improving maintainability.
 
 ## Architecture
 
