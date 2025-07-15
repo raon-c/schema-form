@@ -1,6 +1,8 @@
 // Utility functions for the SchemaForm library
 // This module contains helper functions and utilities
 
+// Export ErrorManager class
+export * from './ErrorManager';
 // Export error handling utilities
 export * from './errorHandling';
 // Re-export schema utilities

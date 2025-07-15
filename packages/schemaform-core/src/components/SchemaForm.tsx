@@ -33,7 +33,7 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
   ) {
     const isControlled = !!externalControl;
 
-    // Enhanced error handling
+    // Enhanced error handling with ErrorManager
     const {
       errors: errorState,
       setFieldError,
@@ -41,6 +41,12 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
       shouldShowError,
       formatErrorMessage,
       errorCount,
+      setFieldTouched,
+      setFieldDirty,
+      setFieldValidating,
+      getFieldErrorState,
+      isAnyFieldValidating,
+      getErrorSummary,
     } = useErrorHandling({
       ...(errorMessages && { errorMessages }),
       ...(errorDisplayOptions && { errorDisplayOptions }),

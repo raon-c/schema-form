@@ -116,6 +116,13 @@ export type {
   SchemaFormState,
 } from '../types';
 export {
+  AccessibilityManager,
+  cleanupGlobalAccessibilityManager,
+  createAccessibilityManager,
+  getAccessibilityManager,
+} from '../utils/AccessibilityManager';
+export { createErrorManager, ErrorManager } from '../utils/ErrorManager';
+export {
   createErrorMap,
   extractFieldsFromSchema,
   getComponentTypeFromZodType,

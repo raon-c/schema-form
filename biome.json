@@ -57,6 +57,7 @@
       },
       "correctness": {
         "noUnusedVariables": "warn",
+        "noUnusedImports": "off",
         "useHookAtTopLevel": "error"
       },
       "complexity": {

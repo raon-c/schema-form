@@ -1,20 +1,12 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { FieldError } from 'react-hook-form';
 import type {
   ErrorDisplayOptions,
   ErrorMessages,
+  FieldMetadata,
   FormErrorState,
 } from '../types';
-import {
-  clearAllErrors as clearAllErrorsUtil,
-  clearFieldError as clearFieldErrorUtil,
-  createFieldErrorState,
-  defaultErrorMessages,
-  getErrorFieldPaths,
-  getFieldErrorMessage,
-  hasFieldError,
-  shouldShowFieldError,
-} from '../utils/errorHandling';
+import { ErrorManager } from '../utils/ErrorManager';
 
 export interface UseErrorHandlingProps {
   errorMessages?: ErrorMessages | undefined;
@@ -28,7 +20,9 @@ export interface UseErrorHandlingReturn {
     fieldPath: string,
     error: FieldError | undefined,
     isDirty?: boolean,
-    isTouched?: boolean
+    isTouched?: boolean,
+    isValidating?: boolean,
+    meta?: FieldMetadata
   ) => void;
   clearFieldError: (fieldPath: string) => void;
   clearAllErrors: () => void;
@@ -36,129 +30,285 @@ export interface UseErrorHandlingReturn {
   getErrorFieldPaths: () => string[];
   shouldShowError: (
     fieldPath: string,
-    meta: any,
+    meta: FieldMetadata,
     isSubmitted?: boolean
   ) => boolean;
   formatErrorMessage: (
     error: FieldError,
     fieldName: string,
-    meta: any
+    meta: FieldMetadata
   ) => string;
   errorCount: number;
+  // Enhanced methods from ErrorManager
+  setFieldTouched: (fieldPath: string, isTouched?: boolean) => void;
+  setFieldDirty: (fieldPath: string, isDirty?: boolean) => void;
+  setFieldValidating: (fieldPath: string, isValidating?: boolean) => void;
+  getFieldErrorState: (
+    fieldPath: string
+  ) => import('../types').FieldErrorState | undefined;
+  isAnyFieldValidating: () => boolean;
+  getValidatingFieldPaths: () => string[];
+  getErrorSummary: () => {
+    totalErrors: number;
+    validatingFields: number;
+    touchedFields: number;
+    dirtyFields: number;
+    errorsByType: Record<string, number>;
+  };
+  batchUpdateErrors: (
+    updates: Array<{
+      fieldPath: string;
+      error?: FieldError;
+      isDirty?: boolean;
+      isTouched?: boolean;
+      isValidating?: boolean;
+    }>
+  ) => void;
+  // Accessibility methods
+  announceFormErrors: (
+    fieldsWithMeta: Array<{ fieldPath: string; meta: FieldMetadata }>
+  ) => void;
+  announceFormSuccess: (message?: string) => void;
+  focusFirstErrorField: () => void;
+  setFieldAccessibility: (
+    fieldPath: string,
+    meta: FieldMetadata,
+    isRequired?: boolean
+  ) => void;
+  associateErrorWithField: (fieldPath: string, errorId: string) => void;
+  generateErrorId: (fieldPath: string) => string;
+  setupKeyboardNavigation: (formElement: HTMLElement) => void;
 }
 
 export function useErrorHandling({
-  errorMessages = defaultErrorMessages,
-  errorDisplayOptions = {},
+  errorMessages,
+  errorDisplayOptions,
   onError,
 }: UseErrorHandlingProps = {}): UseErrorHandlingReturn {
-  const [errors, setErrors] = useState<FormErrorState>({});
+  // Force re-render when error state changes
+  const [, setRenderKey] = useState(0);
+  const forceRerender = useCallback(() => setRenderKey(prev => prev + 1), []);
 
-  const {
-    showErrorsOnTouch = true,
-    showErrorsOnSubmit = false,
-    showErrorsOnBlur = false,
-    showErrorsOnChange = false,
-    clearErrorsOnFocus = false,
-  } = errorDisplayOptions;
+  // Create ErrorManager instance with callback to trigger re-renders
+  const errorManagerRef = useRef<ErrorManager | null>(null);
 
-  // Error message formatter
-  const formatErrorMessage = useCallback(
-    (error: FieldError, fieldName: string, meta: any) => {
-      return getFieldErrorMessage(error, fieldName, meta, errorMessages);
-    },
-    [errorMessages]
-  );
+  if (!errorManagerRef.current) {
+    errorManagerRef.current = new ErrorManager(
+      errorDisplayOptions,
+      errorMessages,
+      errors => {
+        onError?.(errors);
+        forceRerender();
+      }
+    );
+  }
 
-  // Set field error
+  const errorManager = errorManagerRef.current;
+
+  // Update ErrorManager when props change
+  useMemo(() => {
+    if (errorDisplayOptions) {
+      errorManager.updateDisplayOptions(errorDisplayOptions);
+    }
+    if (errorMessages) {
+      errorManager.updateErrorMessages(errorMessages);
+    }
+  }, [errorManager, errorDisplayOptions, errorMessages]);
+
+  // Get current error state
+  const errors = useMemo(() => errorManager.getErrorState(), [errorManager]);
+
+  // Enhanced error handling methods
   const setFieldError = useCallback(
     (
       fieldPath: string,
       error: FieldError | undefined,
       isDirty = false,
-      isTouched = false
+      isTouched = false,
+      isValidating = false,
+      meta?: FieldMetadata
     ) => {
-      setErrors(prevErrors => {
-        const errorState = createFieldErrorState(error, isDirty, isTouched);
-        const newErrors = {
-          ...prevErrors,
-          [fieldPath]: errorState,
-        };
-
-        // Call onError callback if provided
-        onError?.(newErrors);
-
-        return newErrors;
-      });
-    },
-    [onError]
-  );
-
-  // Clear field error
-  const clearFieldError = useCallback(
-    (fieldPath: string) => {
-      setErrors(prevErrors => {
-        const newErrors = clearFieldErrorUtil(prevErrors, fieldPath);
-        onError?.(newErrors);
-        return newErrors;
-      });
-    },
-    [onError]
-  );
-
-  // Clear all errors
-  const clearAllErrors = useCallback(() => {
-    setErrors(prevErrors => {
-      const newErrors = clearAllErrorsUtil(prevErrors);
-      onError?.(newErrors);
-      return newErrors;
-    });
-  }, [onError]);
-
-  // Check if field has error
-  const checkHasFieldError = useCallback(
-    (fieldPath: string) => {
-      return hasFieldError(errors, fieldPath);
-    },
-    [errors]
-  );
-
-  // Get all error field paths
-  const getErrorFieldPathsList = useCallback(() => {
-    return getErrorFieldPaths(errors);
-  }, [errors]);
-
-  // Check if error should be shown
-  const shouldShowError = useCallback(
-    (fieldPath: string, meta: any, isSubmitted = false) => {
-      const errorState = errors[fieldPath];
-      if (!errorState) return false;
-
-      return shouldShowFieldError(
-        errorState,
-        meta,
-        showErrorsOnTouch,
-        showErrorsOnSubmit,
-        isSubmitted
+      errorManager.setFieldError(
+        fieldPath,
+        error,
+        isDirty,
+        isTouched,
+        isValidating,
+        meta
       );
     },
-    [errors, showErrorsOnTouch, showErrorsOnSubmit]
+    [errorManager]
+  );
+
+  const clearFieldError = useCallback(
+    (fieldPath: string) => {
+      errorManager.clearFieldError(fieldPath);
+    },
+    [errorManager]
+  );
+
+  const clearAllErrors = useCallback(() => {
+    errorManager.clearAllErrors();
+  }, [errorManager]);
+
+  const hasFieldError = useCallback(
+    (fieldPath: string) => {
+      return errorManager.hasFieldError(fieldPath);
+    },
+    [errorManager]
+  );
+
+  const getErrorFieldPaths = useCallback(() => {
+    return errorManager.getErrorFieldPaths();
+  }, [errorManager]);
+
+  const shouldShowError = useCallback(
+    (fieldPath: string, meta: FieldMetadata, isSubmitted = false) => {
+      return errorManager.shouldShowError(fieldPath, meta, isSubmitted);
+    },
+    [errorManager]
+  );
+
+  const formatErrorMessage = useCallback(
+    (error: FieldError, fieldName: string, meta: FieldMetadata) => {
+      return errorManager.formatErrorMessage(error, fieldName, meta);
+    },
+    [errorManager]
+  );
+
+  const setFieldTouched = useCallback(
+    (fieldPath: string, isTouched = true) => {
+      errorManager.setFieldTouched(fieldPath, isTouched);
+    },
+    [errorManager]
+  );
+
+  const setFieldDirty = useCallback(
+    (fieldPath: string, isDirty = true) => {
+      errorManager.setFieldDirty(fieldPath, isDirty);
+    },
+    [errorManager]
+  );
+
+  const setFieldValidating = useCallback(
+    (fieldPath: string, isValidating = true) => {
+      errorManager.setFieldValidating(fieldPath, isValidating);
+    },
+    [errorManager]
+  );
+
+  const getFieldErrorState = useCallback(
+    (fieldPath: string) => {
+      return errorManager.getFieldErrorState(fieldPath);
+    },
+    [errorManager]
+  );
+
+  const isAnyFieldValidating = useCallback(() => {
+    return errorManager.isAnyFieldValidating();
+  }, [errorManager]);
+
+  const getValidatingFieldPaths = useCallback(() => {
+    return errorManager.getValidatingFieldPaths();
+  }, [errorManager]);
+
+  const getErrorSummary = useCallback(() => {
+    return errorManager.getErrorSummary();
+  }, [errorManager]);
+
+  const batchUpdateErrors = useCallback(
+    (
+      updates: Array<{
+        fieldPath: string;
+        error?: FieldError;
+        isDirty?: boolean;
+        isTouched?: boolean;
+        isValidating?: boolean;
+      }>
+    ) => {
+      errorManager.batchUpdateErrors(updates);
+    },
+    [errorManager]
+  );
+
+  // Accessibility methods
+  const announceFormErrors = useCallback(
+    (fieldsWithMeta: Array<{ fieldPath: string; meta: FieldMetadata }>) => {
+      errorManager.announceFormErrors(fieldsWithMeta);
+    },
+    [errorManager]
+  );
+
+  const announceFormSuccess = useCallback(
+    (message?: string) => {
+      errorManager.announceFormSuccess(message);
+    },
+    [errorManager]
+  );
+
+  const focusFirstErrorField = useCallback(() => {
+    errorManager.focusFirstErrorField();
+  }, [errorManager]);
+
+  const setFieldAccessibility = useCallback(
+    (fieldPath: string, meta: FieldMetadata, isRequired = false) => {
+      errorManager.setFieldAccessibility(fieldPath, meta, isRequired);
+    },
+    [errorManager]
+  );
+
+  const associateErrorWithField = useCallback(
+    (fieldPath: string, errorId: string) => {
+      errorManager.associateErrorWithField(fieldPath, errorId);
+    },
+    [errorManager]
+  );
+
+  const generateErrorId = useCallback(
+    (fieldPath: string) => {
+      return errorManager.generateErrorId(fieldPath);
+    },
+    [errorManager]
+  );
+
+  const setupKeyboardNavigation = useCallback(
+    (formElement: HTMLElement) => {
+      errorManager.setupKeyboardNavigation(formElement);
+    },
+    [errorManager]
   );
 
   // Count total errors
   const errorCount = useMemo(() => {
-    return Object.values(errors).filter(error => error.hasError).length;
-  }, [errors]);
+    return errorManager.getErrorCount();
+  }, [errorManager]);
 
   return {
     errors,
     setFieldError,
     clearFieldError,
     clearAllErrors,
-    hasFieldError: checkHasFieldError,
-    getErrorFieldPaths: getErrorFieldPathsList,
+    hasFieldError,
+    getErrorFieldPaths,
     shouldShowError,
     formatErrorMessage,
     errorCount,
+    // Enhanced methods
+    setFieldTouched,
+    setFieldDirty,
+    setFieldValidating,
+    getFieldErrorState,
+    isAnyFieldValidating,
+    getValidatingFieldPaths,
+    getErrorSummary,
+    batchUpdateErrors,
+    // Accessibility methods
+    announceFormErrors,
+    announceFormSuccess,
+    focusFirstErrorField,
+    setFieldAccessibility,
+    associateErrorWithField,
+    generateErrorId,
+    setupKeyboardNavigation,
   };
 }

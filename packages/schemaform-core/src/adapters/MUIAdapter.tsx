@@ -58,6 +58,9 @@ export const MUIAdapter: UIAdapter = {
       case 'text':
       case 'password':
       case 'email':
+      case 'url':
+      case 'tel':
+      case 'search':
       case 'number':
         return (
           <Controller
@@ -70,9 +73,15 @@ export const MUIAdapter: UIAdapter = {
                     ? 'password'
                     : componentType === 'email'
                       ? 'email'
-                      : componentType === 'number'
-                        ? 'number'
-                        : 'text'
+                      : componentType === 'url'
+                        ? 'url'
+                        : componentType === 'tel'
+                          ? 'tel'
+                          : componentType === 'search'
+                            ? 'search'
+                            : componentType === 'number'
+                              ? 'number'
+                              : 'text'
                 }
                 id={name}
                 label={label}
@@ -218,8 +227,131 @@ export const MUIAdapter: UIAdapter = {
           />
         );
 
+      case 'radio':
+        return (
+          <Controller
+            name={name}
+            control={control}
+            render={({ field, fieldState }) => (
+              <FormControl error={hasError || fieldState.invalid}>
+                <div role="radiogroup" aria-labelledby={`${name}-label`}>
+                  {label && (
+                    <div
+                      id={`${name}-label`}
+                      style={{ marginBottom: 8, fontWeight: 500 }}
+                    >
+                      {label}
+                    </div>
+                  )}
+                  {options?.map((option: { value: string; label: string }) => (
+                    <FormControlLabel
+                      key={option.value}
+                      control={
+                        <input
+                          type="radio"
+                          value={option.value}
+                          checked={field.value === option.value}
+                          onChange={() => field.onChange(option.value)}
+                          disabled={!!disabled}
+                          {...domProps}
+                        />
+                      }
+                      label={option.label}
+                    />
+                  ))}
+                </div>
+                {(displayHelperText || fieldState.error?.message) && (
+                  <FormHelperText>
+                    {displayHelperText || fieldState.error?.message}
+                  </FormHelperText>
+                )}
+              </FormControl>
+            )}
+          />
+        );
+
+      case 'date':
+        return (
+          <Controller
+            name={name}
+            control={control}
+            render={({ field, fieldState }) => (
+              <TextField
+                type="date"
+                id={name}
+                label={label}
+                error={hasError || fieldState.invalid}
+                helperText={displayHelperText || fieldState.error?.message}
+                disabled={!!disabled}
+                fullWidth
+                {...field}
+                {...domProps}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+            )}
+          />
+        );
+
+      case 'custom':
+        // This should be handled by renderCustomComponent, but provide fallback
+        return (
+          <div
+            style={{ padding: 16, border: '1px dashed #ccc', borderRadius: 4 }}
+          >
+            <p>Custom component not rendered</p>
+            <p>
+              Field: <code>{name}</code>
+            </p>
+          </div>
+        );
+
+      case 'object':
+        // Objects need special handling - could be enhanced with nested form rendering
+        return (
+          <div
+            style={{
+              padding: 16,
+              border: '1px solid #e0e0e0',
+              borderRadius: 4,
+              backgroundColor: '#f5f5f5',
+            }}
+          >
+            <p>Object field (nested form needed)</p>
+            <p>
+              Field: <code>{name}</code>
+            </p>
+          </div>
+        );
+
       default:
-        return <div>Unsupported MUI field type: {componentType}</div>;
+        // Enhanced fallback with better error information for MUI
+        return (
+          <div
+            style={{
+              padding: 16,
+              border: '1px solid #f44336',
+              borderRadius: 4,
+              backgroundColor: '#ffebee',
+            }}
+          >
+            <p style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+              Unsupported MUI field type: <code>{componentType}</code>
+            </p>
+            <p>
+              Field name: <code>{name}</code>
+            </p>
+            <details style={{ marginTop: 8 }}>
+              <summary style={{ cursor: 'pointer', color: '#1976d2' }}>
+                Debug Info
+              </summary>
+              <pre style={{ fontSize: '12px', overflow: 'auto', marginTop: 8 }}>
+                {JSON.stringify(props, null, 2)}
+              </pre>
+            </details>
+          </div>
+        );
     }
   },
 

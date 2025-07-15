@@ -11,5 +11,8 @@
     "quickfix.biome.correctness.noUnusedVariables": "never",
     "source.organizeImports.biome": "explicit",
     "source.addMissingImports": "always"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
   }
 }

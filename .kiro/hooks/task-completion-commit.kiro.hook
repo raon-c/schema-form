@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Task Completion Auto-Commit",
+  "description": "Automatically commits changes when a task is completed with conventional commit format prefixed with [AI]",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["**/tasks.md"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A task has been completed. Please review the current state and commit all changes with a conventional commit message in the format \"[AI]: {conventional commit}\". Analyze what was accomplished and create an appropriate commit message following conventional commit standards (feat:, fix:, docs:, style:, refactor:, test:, chore:, etc.)."
+  }
+}
