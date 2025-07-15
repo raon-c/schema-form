@@ -6,6 +6,8 @@
   --sf-error-color: #d32f2f;
   --sf-input-border-color: #ccc;
   --sf-input-error-border-color: var(--sf-error-color);
+  --sf-transition-duration: 0.3s;
+  --sf-transition-easing: ease-in-out;
 }
 
 .sf-field-container {
@@ -36,4 +38,35 @@
   color: var(--sf-error-color);
   font-size: 0.875rem;
   margin-top: 0.25rem;
+}
+
+/* Conditional field transitions */
+.sf-conditional-field {
+  transition: all var(--sf-transition-duration) var(--sf-transition-easing);
+  overflow: hidden;
+}
+
+.sf-conditional-field--entering {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+  transform: translateY(-10px);
+}
+
+.sf-conditional-field--entered {
+  opacity: 1;
+  max-height: 500px; /* Reasonable max height for most fields */
+  margin-bottom: var(--sf-field-spacing);
+  transform: translateY(0);
+}
+
+.sf-conditional-field--exiting {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+  transform: translateY(-10px);
+}
+
+.sf-conditional-field--exited {
+  display: none;
 }

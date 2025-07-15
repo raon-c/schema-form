@@ -2,3 +2,4 @@
 // This module contains shared components used across the library
 
 export * from './SchemaForm';
+export * from './ConditionalField';

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { Control, DeepPartial, FieldError } from 'react-hook-form';
 import { get, useForm } from 'react-hook-form';
 import type { z } from 'zod/v4';
@@ -10,6 +10,8 @@ import {
   extractFieldsFromSchema,
   getComponentTypeFromZodType,
 } from '../utils/schema';
+import { ConditionalFieldManager } from '../utils/ConditionalFieldManager';
+import { ConditionalField } from './ConditionalField';
 
 export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
   function SchemaForm<T extends $ZodType>(
@@ -56,6 +58,115 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
       ...(onError && { onError }),
     });
 
+    // Conditional field manager for handling field visibility and transitions
+    const conditionalFieldManagerRef = useRef<ConditionalFieldManager | undefined>(undefined);
+    
+    // Initialize conditional field manager
+    if (!conditionalFieldManagerRef.current) {
+      conditionalFieldManagerRef.current = new ConditionalFieldManager({
+        transitionDuration: 300,
+        onFieldShow: (fieldPath: string) => {
+          // Clear validation errors when field becomes visible
+          clearFieldError(fieldPath);
+        },
+        onFieldHide: (fieldPath: string) => {
+          // Clear validation errors when field becomes hidden
+          clearFieldError(fieldPath);
+        },
+      });
+    }
+
+    const conditionalFieldManager = conditionalFieldManagerRef.current;
+
+    // Field state preservation utilities
+    const preserveFieldState = useCallback((fieldPath: string, formControl: any) => {
+      if (!formControl || !conditionalFieldManager) return;
+      
+      try {
+        // Get current field value and error
+        const currentValue = formControl.getValues ? formControl.getValues(fieldPath) : undefined;
+        const currentError = formControl.formState?.errors ? get(formControl.formState.errors, fieldPath) : undefined;
+        
+        // Preserve the state in conditional field manager
+        conditionalFieldManager.preserveFieldState(fieldPath, currentValue, currentError);
+      } catch (error) {
+        console.warn(`Failed to preserve state for field ${fieldPath}:`, error);
+      }
+    }, [conditionalFieldManager]);
+
+    const restoreFieldState = useCallback((fieldPath: string, formControl: any) => {
+      if (!formControl || !conditionalFieldManager || !conditionalFieldManager.hasPreservedState(fieldPath)) return;
+      
+      try {
+        // Get preserved state
+        const preservedValue = conditionalFieldManager.getPreservedValue(fieldPath);
+        const preservedError = conditionalFieldManager.getPreservedError(fieldPath);
+        
+        // Restore field value if it was preserved
+        if (preservedValue !== undefined && formControl.setValue) {
+          formControl.setValue(fieldPath, preservedValue, { 
+            shouldValidate: false, 
+            shouldDirty: true,
+            shouldTouch: false 
+          });
+        }
+        
+        // Restore field error if it was preserved
+        if (preservedError && formControl.setError) {
+          formControl.setError(fieldPath, preservedError);
+        }
+        
+        // Clear preserved state after restoration
+        conditionalFieldManager.clearPreservedState(fieldPath);
+      } catch (error) {
+        console.warn(`Failed to restore state for field ${fieldPath}:`, error);
+      }
+    }, [conditionalFieldManager]);
+
+    // Cleanup conditional field manager on unmount
+    useEffect(() => {
+      return () => {
+        conditionalFieldManager.cleanup();
+      };
+    }, [conditionalFieldManager]);
+
+    // Utility function to filter out hidden fields from form data
+    const filterHiddenFields = useCallback((data: any): any => {
+      const hiddenFieldPaths = conditionalFieldManager.getHiddenFieldPaths();
+      if (hiddenFieldPaths.length === 0) {
+        return data; // No hidden fields, return original data
+      }
+
+      // Create a deep copy of the data to avoid mutations
+      const filteredData = JSON.parse(JSON.stringify(data));
+
+      // Remove hidden field values from the data
+      hiddenFieldPaths.forEach(fieldPath => {
+        // Handle nested field paths (e.g., "user.profile.email")
+        const pathParts = fieldPath.split('.');
+        let current = filteredData;
+        
+        // Navigate to the parent object
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          const pathPart = pathParts[i];
+          if (current && typeof current === 'object' && pathPart && pathPart in current) {
+            current = current[pathPart];
+          } else {
+            // Path doesn't exist, nothing to remove
+            return;
+          }
+        }
+        
+        // Remove the final property
+        const finalKey = pathParts[pathParts.length - 1];
+        if (current && typeof current === 'object' && finalKey && finalKey in current) {
+          delete current[finalKey];
+        }
+      });
+
+      return filteredData;
+    }, [conditionalFieldManager]);
+
     const FormFields = ({
       control,
       errors,
@@ -66,80 +177,129 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
       errors: any;
       formValues: any;
       isSubmitted?: boolean;
-    }) => (
-      <>
-        {extractFieldsFromSchema(schema).map((field: any) => {
-          const { path, meta, zodType } = field;
+    }) => {
+      // Extract fields from schema
+      const fields = useMemo(() => extractFieldsFromSchema(schema), [schema]);
 
-          return (
-            <React.Fragment key={path}>
-              {(() => {
-                const displayCondition = meta?.displayCondition;
-                if (displayCondition && !displayCondition(formValues)) {
-                  return null;
-                }
+      return (
+        <>
+          {fields.map((field: any) => {
+            const { path, meta, zodType } = field;
 
-                const disabledCondition = meta?.disabledCondition;
-                const isDisabled =
-                  !!meta?.disabled ||
-                  (disabledCondition ? disabledCondition(formValues) : false);
+            // Evaluate field visibility using conditional field manager
+            const isVisible = conditionalFieldManager.evaluateFieldVisibility(
+              path,
+              meta,
+              formValues
+            );
 
-                const error = get(errors, path);
+            // Get previous visibility state
+            const previousState = conditionalFieldManager.getFieldState(path);
+            const wasVisible = previousState.isVisible;
 
-                // Enhanced error handling - check if error should be shown
-                const showError =
-                  error && shouldShowError(path, meta, isSubmitted);
+            // Update field visibility state and get transition state
+            const fieldState = conditionalFieldManager.updateFieldVisibility(
+              path,
+              isVisible
+            );
 
-                let fieldNode: React.ReactNode;
-                const componentProps = {
-                  name: path,
-                  control,
-                  ...meta,
-                  disabled: isDisabled,
-                  error: showError ? error : undefined,
-                };
+            // Handle field state preservation and restoration
+            if (wasVisible && !isVisible) {
+              // Field is becoming hidden - preserve its state
+              preserveFieldState(path, control);
+            } else if (!wasVisible && isVisible) {
+              // Field is becoming visible - restore its state if available
+              restoreFieldState(path, control);
+            }
 
-                if (meta?.component && uiAdapter.renderCustomComponent) {
-                  fieldNode = uiAdapter.renderCustomComponent(
-                    meta.component,
-                    componentProps
-                  );
-                } else {
-                  const componentType = getComponentTypeFromZodType(
-                    zodType,
-                    meta
-                  );
-                  fieldNode = uiAdapter.renderField(
-                    componentType,
-                    componentProps
-                  );
-                }
+            // Don't render if field should not be rendered (completely hidden)
+            if (!conditionalFieldManager.shouldRenderField(path)) {
+              return null;
+            }
 
-                const layoutRenderer =
-                  formRenderFieldLayout ?? uiAdapter.renderFieldLayout;
+            // Evaluate disabled condition
+            const disabledCondition = meta?.disabledCondition;
+            const isDisabled =
+              !!meta?.disabled ||
+              (disabledCondition ? disabledCondition(formValues) : false);
 
-                if (layoutRenderer) {
-                  return layoutRenderer({
-                    children: fieldNode,
-                    label: meta?.label || '',
-                    error: showError ? error : undefined,
-                    helperText: meta?.helperText,
-                    meta,
-                    errorState: errorState[path] || {
-                      hasError: false,
-                      isDirty: false,
-                      isTouched: false,
-                      isValidating: false,
-                    },
-                  });
-                }
-                return fieldNode;
-              })()}
-            </React.Fragment>
-          );
-        })}
-      </>
-    );
+            const error = get(errors, path);
+
+            // Enhanced error handling - check if error should be shown
+            // Don't show errors for hidden fields
+            const showError =
+              error && 
+              fieldState.isVisible && 
+              shouldShowError(path, meta, isSubmitted);
+
+            // Create field component
+            let fieldNode: React.ReactNode;
+            const componentProps = {
+              name: path,
+              control,
+              ...meta,
+              disabled: isDisabled,
+              error: showError ? error : undefined,
+            };
+
+            if (meta?.component && uiAdapter.renderCustomComponent) {
+              fieldNode = uiAdapter.renderCustomComponent(
+                meta.component,
+                componentProps
+              );
+            } else {
+              const componentType = getComponentTypeFromZodType(
+                zodType,
+                meta
+              );
+              fieldNode = uiAdapter.renderField(
+                componentType,
+                componentProps
+              );
+            }
+
+            // Apply layout renderer if available
+            const layoutRenderer =
+              formRenderFieldLayout ?? uiAdapter.renderFieldLayout;
+
+            let renderedField: React.ReactNode;
+            if (layoutRenderer) {
+              renderedField = layoutRenderer({
+                children: fieldNode,
+                label: meta?.label || '',
+                error: showError ? error : undefined,
+                helperText: meta?.helperText,
+                meta,
+                errorState: errorState[path] || {
+                  hasError: false,
+                  isDirty: false,
+                  isTouched: false,
+                  isValidating: false,
+                },
+              });
+            } else {
+              renderedField = fieldNode;
+            }
+
+            // Wrap field in ConditionalField component for transition handling
+            return (
+              <ConditionalField
+                key={path}
+                fieldPath={path}
+                isVisible={fieldState.isVisible}
+                transitionState={fieldState.transitionState}
+                shouldRender={fieldState.shouldRender}
+                onTransitionEnd={() => {
+                  // Handle transition completion if needed
+                }}
+              >
+                {renderedField}
+              </ConditionalField>
+            );
+          })}
+        </>
+      );
+    };
 
     const UncontrolledForm = () => {
       const {
@@ -257,12 +417,16 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
         },
       }));
 
-      // Enhanced error submission handling
+      // Enhanced error submission handling with hidden field filtering
       const handleFormSubmit = async (data: any) => {
         try {
-          await onSubmit(data);
+          // Filter out hidden fields from submission data
+          const filteredData = filterHiddenFields(data);
+          await onSubmit(filteredData);
           if (resetOnSubmit) {
             reset();
+            // Reset conditional field manager state
+            conditionalFieldManager.resetAllFields();
           }
         } catch (error) {
           console.error('Form submission error:', error);
@@ -506,16 +670,20 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
         },
       }));
 
-      // Enhanced controlled form submission handler
+      // Enhanced controlled form submission handler with hidden field filtering
       const handleControlledSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (externalControl && 'handleSubmit' in externalControl) {
           const handleSubmit = (externalControl as any).handleSubmit;
           handleSubmit(async (data: any) => {
             try {
-              await onSubmit(data);
+              // Filter out hidden fields from submission data
+              const filteredData = filterHiddenFields(data);
+              await onSubmit(filteredData);
               if (resetOnSubmit && 'reset' in externalControl) {
                 (externalControl as any).reset();
+                // Reset conditional field manager state
+                conditionalFieldManager.resetAllFields();
               }
             } catch (error) {
               console.error('Controlled form submission error:', error);
@@ -527,7 +695,9 @@ export const SchemaForm = forwardRef<SchemaFormRef, SchemaFormProps<any>>(
         } else {
           // Fallback for basic controlled mode
           try {
-            onSubmit(formValues);
+            // Filter out hidden fields from submission data
+            const filteredData = filterHiddenFields(formValues);
+            onSubmit(filteredData);
           } catch (error) {
             console.error('Controlled form submission error:', error);
             if (onError) {

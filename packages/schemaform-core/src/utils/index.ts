@@ -9,6 +9,8 @@ export * from './AccessibilityManager';
 export * from './AsyncValidationManager';
 // Export ValidationCacheManager class
 export * from './ValidationCacheManager';
+// Export ConditionalFieldManager class
+export * from './ConditionalFieldManager';
 // Export error handling utilities
 export * from './errorHandling';
 // Re-export schema utilities
